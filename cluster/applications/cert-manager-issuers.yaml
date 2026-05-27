@@ -12,7 +12,7 @@ spec:
   source:
     repoURL: https://github.com/anomaly51/workload-1-k3s-argocd.git
     targetRevision: main
-    path: apps/cert-manager-issuers
+    path: infrastructure/cert-manager-issuers
   destination:
     server: https://kubernetes.default.svc
     namespace: cert-manager

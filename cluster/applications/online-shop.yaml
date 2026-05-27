@@ -7,6 +7,11 @@ metadata:
   - resources-finalizer.argocd.argoproj.io
   annotations:
     argocd.argoproj.io/sync-wave: '60'
+    argocd-image-updater.argoproj.io/image-list: backend=harbor.api-api-api.com/online-shop/backend
+    argocd-image-updater.argoproj.io/backend.allow-tags: regexp:^main-[0-9]+-[a-f0-9]{40}$
+    argocd-image-updater.argoproj.io/backend.update-strategy: newest-build
+    argocd-image-updater.argoproj.io/write-back-method: git
+    argocd-image-updater.argoproj.io/write-back-target: kustomization:./apps/online-shop
 spec:
   project: gitops-apps
   source:
