@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: online-shop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: online-shop-frontend
+  template:
+    metadata:
+      labels:
+        app: online-shop-frontend
+    spec:
+      imagePullSecrets:
+        - name: harbor-pull-secret
+      containers:
+        - name: frontend
+          image: harbor.api-api-api.com/online-shop/frontend:main-43-9603db6013888a55d6866bb60e5956e1248cff73
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: online-shop
+spec:
+  selector:
+    app: online-shop-frontend
+  ports:
+    - port: 80
+      targetPort: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: frontend
+  namespace: online-shop
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-production
+    external-dns.alpha.kubernetes.io/hostname: online-shop.api-api-api.com
+    external-dns.alpha.kubernetes.io/target: a6aaa50f-2590-4179-84f2-d0f18bce0587.cfargotunnel.com
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - online-shop.api-api-api.com
+      secretName: online-shop-tls
+  rules:
+    - host: online-shop.api-api-api.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80
