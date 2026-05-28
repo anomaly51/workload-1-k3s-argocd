@@ -11,13 +11,11 @@ metadata:
     argocd-image-updater.argoproj.io/frontend.allow-tags: regexp:^main-[0-9]+-[a-f0-9]{40}$
     argocd-image-updater.argoproj.io/frontend.update-strategy: newest-build
     argocd-image-updater.argoproj.io/write-back-method: git
-    argocd-image-updater.argoproj.io/write-back-target: kustomization:./apps/online-shop-frontend
+    argocd-image-updater.argoproj.io/write-back-target: helmvalues:/values/online-shop-frontend.yaml
+    argocd-image-updater.argoproj.io/frontend.helm.image-name: images.frontend.repository
+    argocd-image-updater.argoproj.io/frontend.helm.image-tag: images.frontend.tag
 spec:
   project: gitops-apps
-  source:
-    repoURL: https://github.com/anomaly51/workload-1-k3s-argocd.git
-    targetRevision: main
-    path: apps/online-shop-frontend
   destination:
     server: https://kubernetes.default.svc
     namespace: online-shop-frontend
@@ -38,3 +36,14 @@ spec:
     - CreateNamespace=true
     - ServerSideApply=true
     - SkipDryRunOnMissingResource=true
+  sources:
+  - repoURL: harbor.api-api-api.com/helm-charts
+    chart: common-app
+    targetRevision: 0.1.0
+    helm:
+      releaseName: online-shop-frontend
+      valueFiles:
+      - "$values/values/online-shop-frontend.yaml"
+  - repoURL: https://github.com/anomaly51/workload-1-k3s-argocd.git
+    targetRevision: main
+    ref: values

@@ -1,0 +1,298 @@
+namespace:
+  create: false
+images:
+  backend:
+    repository: harbor.api-api-api.com/shisha/backend
+    tag: main-42-e9a41fe04e091527ad141b07d4aa74199992c456
+  minio:
+    repository: minio/minio
+    tag: latest
+rawManifests: |
+  apiVersion: v1
+  kind: Namespace
+  metadata:
+    name: shisha-guid
+  ---
+  apiVersion: v1
+  kind: Service
+  metadata:
+    name: backend
+    namespace: shisha-guid
+  spec:
+    ports:
+    - port: 80
+      targetPort: 8000
+    selector:
+      app: backend
+  ---
+  apiVersion: v1
+  kind: Service
+  metadata:
+    name: minio
+    namespace: shisha-guid
+  spec:
+    ports:
+    - name: api
+      port: 9000
+    - name: console
+      port: 9001
+    selector:
+      app: minio
+  ---
+  apiVersion: v1
+  kind: Service
+  metadata:
+    name: postgres
+    namespace: shisha-guid
+  spec:
+    ports:
+    - port: 5432
+    selector:
+      app: postgres
+  ---
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: backend
+    namespace: shisha-guid
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app: backend
+    template:
+      metadata:
+        labels:
+          app: backend
+      spec:
+        containers:
+        - env:
+          - name: MINIO_ENDPOINT
+            value: minio.shisha-guid.svc.cluster.local:9000
+          - name: MINIO_ACCESS_KEY
+            value: minioadmin
+          - name: MINIO_SECRET_KEY
+            value: minioadmin
+          - name: MINIO_BUCKET
+            value: shisha-guid
+          - name: MINIO_SECURE
+            value: "false"
+          - name: API_PUBLIC_URL
+            value: https://shisha-guid-api.api-api-api.com
+          - name: OPENROUTER_MODEL
+            value: sao10k/l3-lunaris-8b
+          - name: OPENAI_TRANSCRIBE_MODEL
+            value: whisper-1
+          envFrom:
+          - secretRef:
+              name: backend-secret
+          image: __IMAGE_backend__
+          name: backend
+          ports:
+          - containerPort: 8000
+        imagePullSecrets:
+        - name: harbor-pull-secret
+  ---
+  apiVersion: apps/v1
+  kind: StatefulSet
+  metadata:
+    name: minio
+    namespace: shisha-guid
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app: minio
+    serviceName: minio
+    template:
+      metadata:
+        labels:
+          app: minio
+      spec:
+        containers:
+        - args:
+          - server
+          - /data
+          - --console-address
+          - :9001
+          env:
+          - name: MINIO_ROOT_USER
+            value: minioadmin
+          - name: MINIO_ROOT_PASSWORD
+            value: minioadmin
+          image: __IMAGE_minio__
+          name: minio
+          ports:
+          - containerPort: 9000
+          - containerPort: 9001
+          volumeMounts:
+          - mountPath: /data
+            name: data
+    volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Gi
+        storageClassName: nfs-client
+  ---
+  apiVersion: apps/v1
+  kind: StatefulSet
+  metadata:
+    name: postgres
+    namespace: shisha-guid
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app: postgres
+    serviceName: postgres
+    template:
+      metadata:
+        labels:
+          app: postgres
+      spec:
+        containers:
+        - env:
+          - name: POSTGRES_DB
+            value: shishadb
+          - name: POSTGRES_USER
+            value: postgres
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: password
+                name: postgres-secret
+          image: postgres:15-alpine
+          name: postgres
+          ports:
+          - containerPort: 5432
+          volumeMounts:
+          - mountPath: /var/lib/postgresql/data
+            name: data
+    volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 5Gi
+        storageClassName: nfs-client
+  ---
+  apiVersion: external-secrets.io/v1
+  kind: ExternalSecret
+  metadata:
+    name: backend-secret
+    namespace: shisha-guid
+  spec:
+    data:
+    - remoteRef:
+        key: workload-1/shisha-guid-backend
+        property: database_url
+      secretKey: DATABASE_URL
+    - remoteRef:
+        key: workload-1/shisha-guid-backend
+        property: secret_key
+      secretKey: SECRET_KEY
+    - remoteRef:
+        key: workload-1/shisha-guid-backend
+        property: google_client_id
+      secretKey: GOOGLE_CLIENT_ID
+    - remoteRef:
+        key: workload-1/shisha-guid-backend
+        property: google_client_secret
+      secretKey: GOOGLE_CLIENT_SECRET
+    - remoteRef:
+        key: workload-1/shisha-guid-backend
+        property: openrouter_api_key
+      secretKey: OPENROUTER_API_KEY
+    - remoteRef:
+        key: workload-1/shisha-guid-backend
+        property: openai_api_key
+      secretKey: OPENAI_API_KEY
+    refreshInterval: 5m
+    secretStoreRef:
+      kind: ClusterSecretStore
+      name: vault-backend
+    target:
+      creationPolicy: Owner
+      name: backend-secret
+  ---
+  apiVersion: external-secrets.io/v1
+  kind: ExternalSecret
+  metadata:
+    name: harbor-pull-secret
+    namespace: shisha-guid
+  spec:
+    data:
+    - remoteRef:
+        key: shared/harbor
+        property: username
+      secretKey: username
+    - remoteRef:
+        key: shared/harbor
+        property: password
+      secretKey: password
+    refreshInterval: 1h
+    secretStoreRef:
+      kind: ClusterSecretStore
+      name: vault-backend
+    target:
+      creationPolicy: Owner
+      name: harbor-pull-secret
+      template:
+        data:
+          .dockerconfigjson: |
+            {"auths":{"harbor.api-api-api.com":{"username":"{{ .username }}","password":"{{ .password }}","auth":"{{ printf "%s:%s" .username .password | b64enc }}"}}}
+        type: kubernetes.io/dockerconfigjson
+  ---
+  apiVersion: external-secrets.io/v1
+  kind: ExternalSecret
+  metadata:
+    name: postgres-secret
+    namespace: shisha-guid
+  spec:
+    data:
+    - remoteRef:
+        key: workload-1/shisha-guid-postgres
+        property: password
+      secretKey: password
+    refreshInterval: 1h
+    secretStoreRef:
+      kind: ClusterSecretStore
+      name: vault-backend
+    target:
+      creationPolicy: Owner
+      name: postgres-secret
+  ---
+  apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-production
+      external-dns.alpha.kubernetes.io/hostname: shisha-guid-api.api-api-api.com
+      external-dns.alpha.kubernetes.io/target: a6aaa50f-2590-4179-84f2-d0f18bce0587.cfargotunnel.com
+    name: backend
+    namespace: shisha-guid
+  spec:
+    ingressClassName: traefik
+    rules:
+    - host: shisha-guid-api.api-api-api.com
+      http:
+        paths:
+        - backend:
+            service:
+              name: backend
+              port:
+                number: 80
+          path: /
+          pathType: Prefix
+    tls:
+    - hosts:
+      - shisha-guid-api.api-api-api.com
+      secretName: shisha-guid-api-tls
