@@ -57,6 +57,10 @@ spec:
             - name: SEND_CONTENT_TIMEOUT
               value: "180"
           volumeMounts:
+            - name: bot-main
+              mountPath: /app/main.py
+              subPath: main.py
+              readOnly: true
             - name: session-data
               mountPath: /app/session
             - name: logs
@@ -73,6 +77,9 @@ spec:
               cpu: "1"
               memory: 1Gi
       volumes:
+        - name: bot-main
+          configMap:
+            name: bot-main
         - name: bot-session
           secret:
             secretName: bot-session
