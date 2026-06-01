@@ -10,6 +10,8 @@ configMapGenerator:
   - name: bot-main
     files:
       - main.py
+generatorOptions:
+  disableNameSuffixHash: true
 
 images:
   - name: harbor.api-api-api.com/downloader-sloniara-bot/bot
