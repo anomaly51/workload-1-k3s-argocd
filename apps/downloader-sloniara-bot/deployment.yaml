@@ -78,8 +78,7 @@ spec:
             secretName: bot-session
             optional: true
         - name: session-data
-          persistentVolumeClaim:
-            claimName: bot-session-data
+          emptyDir: {}
         - name: logs
           emptyDir: {}
         - name: downloads
