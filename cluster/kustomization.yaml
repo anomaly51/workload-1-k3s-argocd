@@ -12,6 +12,7 @@ resources:
   - applications/cloudflared.yaml
   - applications/external-dns-config.yaml
   - applications/external-dns.yaml
+  - applications/downloader-sloniara-bot.yaml
   - applications/online-shop.yaml
   - applications/online-shop-frontend.yaml
   - applications/shisha-guid.yaml

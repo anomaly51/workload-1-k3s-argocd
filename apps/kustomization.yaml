@@ -3,5 +3,6 @@ kind: Kustomization
 resources:
   - online-shop
   - online-shop-frontend
+  - downloader-sloniara-bot
   - shisha-frontend
   - shisha-guid
