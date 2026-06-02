@@ -37,12 +37,12 @@ spec:
       ignoreDifferences:
       - group: external-secrets.io
         kind: ExternalSecret
-        jsonPointers:
-        - "/spec/target/deletionPolicy"
-        - "/spec/data/0/remoteRef/conversionStrategy"
-        - "/spec/data/0/remoteRef/decodingStrategy"
-        - "/spec/data/0/remoteRef/metadataPolicy"
-        - "/spec/data/0/remoteRef/nullBytePolicy"
+        jqPathExpressions:
+        - ".spec.target.deletionPolicy"
+        - ".spec.data[].remoteRef.conversionStrategy"
+        - ".spec.data[].remoteRef.decodingStrategy"
+        - ".spec.data[].remoteRef.metadataPolicy"
+        - ".spec.data[].remoteRef.nullBytePolicy"
       - group: apps
         kind: StatefulSet
         jsonPointers:
