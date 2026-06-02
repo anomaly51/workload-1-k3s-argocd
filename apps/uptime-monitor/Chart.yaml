@@ -5,4 +5,4 @@ type: application
 dependencies:
 - name: common-app
   version: 0.1.0
-  repository: oci://harbor.api-api-api.com/helm-charts
+  repository: file://../../charts/common-app

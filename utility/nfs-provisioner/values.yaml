@@ -4,7 +4,7 @@ nfs-subdir-external-provisioner:
     path: "/export/test"
   storageClass:
     name: nfs-client
+    provisionerName: cluster.local/nfs-subdir-external-provisioner
     defaultClass: true
-    archiveOnDelete: true
-    reclaimPolicy: Retain
-    pathPattern: "${.PVC.namespace}/${.PVC.name}"
+    archiveOnDelete: false
+    reclaimPolicy: Delete
