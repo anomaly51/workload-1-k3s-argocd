@@ -1,0 +1,77 @@
+alloy:
+  controller:
+    type: deployment
+    replicas: 1
+  alloy:
+    configMap:
+      content: |
+        discovery.kubernetes "pods" {
+          role = "pod"
+        }
+
+        discovery.relabel "architect_business_bot" {
+          targets = discovery.kubernetes.pods.targets
+
+          rule {
+            source_labels = ["__meta_kubernetes_namespace"]
+            regex         = "architect-business-bot"
+            action        = "keep"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
+            regex         = "architect-business-bot"
+            action        = "keep"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_namespace"]
+            target_label  = "namespace"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_name"]
+            target_label  = "pod"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_container_name"]
+            target_label  = "container"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
+            target_label  = "app"
+          }
+
+          rule {
+            target_label = "cluster"
+            replacement  = "workload-1-k3s"
+          }
+
+          rule {
+            target_label = "job"
+            replacement  = "architect-business-bot"
+          }
+        }
+
+        loki.source.kubernetes "architect_business_bot" {
+          targets    = discovery.relabel.architect_business_bot.output
+          forward_to = [loki.write.utility.receiver]
+        }
+
+        loki.write "utility" {
+          endpoint {
+            url = "https://loki.api-api-api.com/loki/api/v1/push"
+            basic_auth {
+              username = "alloy"
+              password = "architect-business-bot-loki"
+            }
+          }
+        }
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        memory: 512Mi

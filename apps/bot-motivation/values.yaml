@@ -1,0 +1,316 @@
+common-app:
+  namespace:
+    create: false
+  images:
+    motivator_bot:
+      repository: harbor.api-api-api.com/bot-motivation/motivator-bot
+      tag: main-6-7f5fd085c1dd2206a9c73aa4cb0e40824fa47c8d
+  rawManifests: |
+    apiVersion: v1
+    kind: Namespace
+    metadata:
+      labels:
+        app.kubernetes.io/name: bot-motivation
+        app.kubernetes.io/part-of: workload-1
+      name: bot-motivation
+    ---
+    apiVersion: v1
+    kind: Service
+    metadata:
+      annotations:
+        prometheus.io/path: /health
+        prometheus.io/port: "8080"
+        prometheus.io/scrape: "true"
+      labels:
+        app.kubernetes.io/name: bot-motivation
+        app.kubernetes.io/part-of: workload-1
+      name: bot-motivation
+      namespace: bot-motivation
+    spec:
+      ports:
+      - name: http
+        port: 80
+        targetPort: http
+      selector:
+        app.kubernetes.io/name: bot-motivation
+      type: ClusterIP
+    ---
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      annotations:
+        argocd.argoproj.io/sync-options: Delete=false,Prune=false
+        helm.sh/resource-policy: keep
+      labels:
+        app.kubernetes.io/name: bot-motivation
+        app.kubernetes.io/part-of: workload-1
+      name: bot-motivation-data
+      namespace: bot-motivation
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+      storageClassName: nfs-client
+    ---
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      labels:
+        app.kubernetes.io/name: bot-motivation
+        app.kubernetes.io/part-of: workload-1
+      name: bot-motivation
+      namespace: bot-motivation
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: bot-motivation
+      strategy:
+        rollingUpdate:
+          maxSurge: 1
+          maxUnavailable: 0
+        type: RollingUpdate
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: bot-motivation
+            app.kubernetes.io/part-of: workload-1
+        spec:
+          containers:
+          - env:
+            - name: APP_VERSION
+              value: main-6-7f5fd085c1dd2206a9c73aa4cb0e40824fa47c8d
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            - name: API_HOST
+              value: 0.0.0.0
+            - name: API_PORT
+              value: "8080"
+            - name: TMA_BASE_URL
+              value: https://pets-void.api-api-api.com
+            - name: BOT_DB_PATH
+              value: /app/data/bot_data.db
+            - name: TIKTOK_COOKIES_PATH
+              value: /app/cookies.txt
+            envFrom:
+            - secretRef:
+                name: bot-motivation-env
+            image: __IMAGE_motivator_bot__
+            imagePullPolicy: IfNotPresent
+            livenessProbe:
+              httpGet:
+                path: /health
+                port: http
+              initialDelaySeconds: 20
+              periodSeconds: 30
+              timeoutSeconds: 3
+            name: motivator-bot
+            ports:
+            - containerPort: 8080
+              name: http
+            readinessProbe:
+              failureThreshold: 6
+              httpGet:
+                path: /health
+                port: http
+              initialDelaySeconds: 2
+              periodSeconds: 5
+              timeoutSeconds: 2
+            resources:
+              limits:
+                memory: 512Mi
+              requests:
+                cpu: 100m
+                memory: 128Mi
+            volumeMounts:
+            - mountPath: /app/data
+              name: data
+            - mountPath: /app/cookies.txt
+              name: cookies
+              readOnly: true
+              subPath: cookies.txt
+          imagePullSecrets:
+          - name: harbor-pull-secret
+          volumes:
+          - name: data
+            persistentVolumeClaim:
+              claimName: bot-motivation-data
+          - name: cookies
+            secret:
+              secretName: bot-motivation-cookies
+    ---
+    apiVersion: external-secrets.io/v1
+    kind: ExternalSecret
+    metadata:
+      name: bot-motivation-cookies
+      namespace: bot-motivation
+    spec:
+      data:
+      - remoteRef:
+          conversionStrategy: Default
+          decodingStrategy: None
+          key: workload-1/bot-motivation
+          metadataPolicy: None
+          nullBytePolicy: Ignore
+          property: cookies_txt
+        secretKey: cookies.txt
+      refreshInterval: 5m
+      secretStoreRef:
+        kind: ClusterSecretStore
+        name: vault-backend
+      target:
+        creationPolicy: Owner
+        deletionPolicy: Retain
+        name: bot-motivation-cookies
+    ---
+    apiVersion: external-secrets.io/v1
+    kind: ExternalSecret
+    metadata:
+      name: bot-motivation-env
+      namespace: bot-motivation
+    spec:
+      data:
+      - remoteRef:
+          conversionStrategy: Default
+          decodingStrategy: None
+          key: workload-1/bot-motivation
+          metadataPolicy: None
+          nullBytePolicy: Ignore
+          property: bot_token
+        secretKey: BOT_TOKEN
+      - remoteRef:
+          conversionStrategy: Default
+          decodingStrategy: None
+          key: workload-1/bot-motivation
+          metadataPolicy: None
+          nullBytePolicy: Ignore
+          property: openrouter_api_key
+        secretKey: OPENROUTER_API_KEY
+      - remoteRef:
+          conversionStrategy: Default
+          decodingStrategy: None
+          key: workload-1/bot-motivation
+          metadataPolicy: None
+          nullBytePolicy: Ignore
+          property: rapid_api_key
+        secretKey: RAPID_API_KEY
+      - remoteRef:
+          conversionStrategy: Default
+          decodingStrategy: None
+          key: workload-1/bot-motivation
+          metadataPolicy: None
+          nullBytePolicy: Ignore
+          property: rapid_api_host
+        secretKey: RAPID_API_HOST
+      - remoteRef:
+          conversionStrategy: Default
+          decodingStrategy: None
+          key: workload-1/bot-motivation
+          metadataPolicy: None
+          nullBytePolicy: Ignore
+          property: rapid_api_url
+        secretKey: RAPID_API_URL
+      - remoteRef:
+          conversionStrategy: Default
+          decodingStrategy: None
+          key: workload-1/bot-motivation
+          metadataPolicy: None
+          nullBytePolicy: Ignore
+          property: group_chat_id
+        secretKey: GROUP_CHAT_ID
+      - remoteRef:
+          conversionStrategy: Default
+          decodingStrategy: None
+          key: workload-1/bot-motivation
+          metadataPolicy: None
+          nullBytePolicy: Ignore
+          property: admin_id
+        secretKey: ADMIN_ID
+      refreshInterval: 5m
+      secretStoreRef:
+        kind: ClusterSecretStore
+        name: vault-backend
+      target:
+        creationPolicy: Owner
+        deletionPolicy: Retain
+        name: bot-motivation-env
+    ---
+    apiVersion: external-secrets.io/v1
+    kind: ExternalSecret
+    metadata:
+      name: harbor-pull-secret
+      namespace: bot-motivation
+    spec:
+      data:
+      - remoteRef:
+          conversionStrategy: Default
+          decodingStrategy: None
+          key: shared/harbor
+          metadataPolicy: None
+          nullBytePolicy: Ignore
+          property: username
+        secretKey: username
+      - remoteRef:
+          conversionStrategy: Default
+          decodingStrategy: None
+          key: shared/harbor
+          metadataPolicy: None
+          nullBytePolicy: Ignore
+          property: password
+        secretKey: password
+      refreshInterval: 5m
+      secretStoreRef:
+        kind: ClusterSecretStore
+        name: vault-backend
+      target:
+        creationPolicy: Owner
+        deletionPolicy: Retain
+        name: harbor-pull-secret
+        template:
+          data:
+            .dockerconfigjson: |
+              {"auths":{"harbor.api-api-api.com":{"username":"{{ .username }}","password":"{{ .password }}","auth":"{{ printf "%s:%s" .username .password | b64enc }}"}}}
+          type: kubernetes.io/dockerconfigjson
+    ---
+    apiVersion: networking.k8s.io/v1
+    kind: Ingress
+    metadata:
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt-production
+        external-dns.alpha.kubernetes.io/hostname: pets-void.api-api-api.com
+        external-dns.alpha.kubernetes.io/target: a6aaa50f-2590-4179-84f2-d0f18bce0587.cfargotunnel.com
+      name: bot-motivation
+      namespace: bot-motivation
+    spec:
+      ingressClassName: traefik
+      rules:
+      - host: pets-void.api-api-api.com
+        http:
+          paths:
+          - backend:
+              service:
+                name: bot-motivation
+                port:
+                  name: http
+            path: /tma
+            pathType: Prefix
+          - backend:
+              service:
+                name: bot-motivation
+                port:
+                  name: http
+            path: /api
+            pathType: Prefix
+          - backend:
+              service:
+                name: bot-motivation
+                port:
+                  name: http
+            path: /health
+            pathType: Exact
+      tls:
+      - hosts:
+        - pets-void.api-api-api.com
+        secretName: bot-motivation-tls

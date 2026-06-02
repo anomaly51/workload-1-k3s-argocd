@@ -1,0 +1,102 @@
+common-app:
+  namespace:
+    create: false
+  images:
+    frontend:
+      repository: harbor.api-api-api.com/shisha/frontend
+      tag: main-86-997fdfb26e261ecdd7cec344e5d8fe0028d88dab
+  rawManifests: |
+    apiVersion: v1
+    kind: Namespace
+    metadata:
+      name: shisha-frontend
+    ---
+    apiVersion: v1
+    kind: Service
+    metadata:
+      name: shisha-frontend
+      namespace: shisha-frontend
+    spec:
+      ports:
+      - port: 80
+        targetPort: 80
+      selector:
+        app: shisha-frontend
+    ---
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: shisha-frontend
+      namespace: shisha-frontend
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app: shisha-frontend
+      template:
+        metadata:
+          labels:
+            app: shisha-frontend
+        spec:
+          containers:
+          - image: __IMAGE_frontend__
+            name: shisha-frontend
+            ports:
+            - containerPort: 80
+          imagePullSecrets:
+          - name: harbor-pull-secret
+    ---
+    apiVersion: external-secrets.io/v1
+    kind: ExternalSecret
+    metadata:
+      name: harbor-pull-secret
+      namespace: shisha-frontend
+    spec:
+      data:
+      - remoteRef:
+          key: shared/harbor
+          property: username
+        secretKey: username
+      - remoteRef:
+          key: shared/harbor
+          property: password
+        secretKey: password
+      refreshInterval: 1h
+      secretStoreRef:
+        kind: ClusterSecretStore
+        name: vault-backend
+      target:
+        creationPolicy: Owner
+        name: harbor-pull-secret
+        template:
+          data:
+            .dockerconfigjson: |
+              {"auths":{"harbor.api-api-api.com":{"username":"{{ .username }}","password":"{{ .password }}","auth":"{{ printf "%s:%s" .username .password | b64enc }}"}}}
+          type: kubernetes.io/dockerconfigjson
+    ---
+    apiVersion: networking.k8s.io/v1
+    kind: Ingress
+    metadata:
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt-production
+        external-dns.alpha.kubernetes.io/hostname: shisha-guid.api-api-api.com
+        external-dns.alpha.kubernetes.io/target: a6aaa50f-2590-4179-84f2-d0f18bce0587.cfargotunnel.com
+      name: shisha-frontend
+      namespace: shisha-frontend
+    spec:
+      ingressClassName: traefik
+      rules:
+      - host: shisha-guid.api-api-api.com
+        http:
+          paths:
+          - backend:
+              service:
+                name: shisha-frontend
+                port:
+                  number: 80
+            path: /
+            pathType: Prefix
+      tls:
+      - hosts:
+        - shisha-guid.api-api-api.com
+        secretName: shisha-frontend-tls

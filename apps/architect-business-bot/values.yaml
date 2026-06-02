@@ -1,0 +1,265 @@
+common-app:
+  namespace:
+    create: false
+  images:
+    bot:
+      repository: harbor.api-api-api.com/architect-business-bot/bot
+      tag: main-51-8db91202e65591f937b200e478817e3889343ea6
+  rawManifests: |
+    apiVersion: v1
+    kind: Namespace
+    metadata:
+      labels:
+        app.kubernetes.io/name: architect-business-bot
+        app.kubernetes.io/part-of: workload-1
+      name: architect-business-bot
+    ---
+    apiVersion: v1
+    kind: Service
+    metadata:
+      annotations:
+        prometheus.io/path: /metrics
+        prometheus.io/port: "8080"
+        prometheus.io/scrape: "true"
+      labels:
+        app.kubernetes.io/name: architect-business-bot
+        app.kubernetes.io/part-of: workload-1
+      name: architect-business-bot
+      namespace: architect-business-bot
+    spec:
+      ports:
+      - name: http
+        port: 80
+        targetPort: http
+      selector:
+        app.kubernetes.io/name: architect-business-bot
+      type: ClusterIP
+    ---
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      annotations:
+        argocd.argoproj.io/sync-options: Delete=false,Prune=false
+        helm.sh/resource-policy: keep
+      labels:
+        app.kubernetes.io/name: architect-business-bot
+        app.kubernetes.io/part-of: workload-1
+      name: architect-business-bot-data
+      namespace: architect-business-bot
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+      storageClassName: nfs-client
+    ---
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      labels:
+        app.kubernetes.io/name: architect-business-bot
+        app.kubernetes.io/part-of: workload-1
+      name: architect-business-bot
+      namespace: architect-business-bot
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: architect-business-bot
+      strategy:
+        rollingUpdate:
+          maxSurge: 1
+          maxUnavailable: 0
+        type: RollingUpdate
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: architect-business-bot
+            app.kubernetes.io/part-of: workload-1
+        spec:
+          containers:
+          - env:
+            - name: APP_VERSION
+              value: main-51-8db91202e65591f937b200e478817e3889343ea6
+            - name: PUBLIC_WEBHOOK_URL
+              value: https://architect-business-bot.api-api-api.com
+            - name: OWNER_TELEGRAM_ID
+              value: "794723616"
+            - name: APP_HOST
+              value: 0.0.0.0
+            - name: APP_PORT
+              value: "8080"
+            - name: DB_PATH
+              value: /app/data/architect.db
+            - name: DEEPSEEK_BASE_URL
+              value: https://openrouter.ai/api/v1
+            - name: DEEPSEEK_MODEL
+              value: deepseek/deepseek-v3.2
+            - name: DEEPSEEK_TIMEOUT_SECONDS
+              value: "45"
+            - name: DEEPSEEK_TEMPERATURE
+              value: "0.9"
+            - name: DEEPSEEK_MAX_TOKENS
+              value: "220"
+            - name: AUTO_PAUSE_AFTER_OWNER_MESSAGE_SECONDS
+              value: "900"
+            - name: MAX_HISTORY_MESSAGES
+              value: "7"
+            - name: DAILY_SUMMARY_ENABLED
+              value: "true"
+            - name: DAILY_SUMMARY_LOOKBACK_HOURS
+              value: "24"
+            - name: DAILY_SUMMARY_TZ
+              value: Europe/Kyiv
+            - name: DAILY_SUMMARY_TIME
+              value: "13:30"
+            envFrom:
+            - secretRef:
+                name: architect-business-bot-env
+            image: __IMAGE_bot__
+            imagePullPolicy: IfNotPresent
+            lifecycle:
+              postStart:
+                exec:
+                  command:
+                  - python
+                  - set_webhook.py
+            livenessProbe:
+              httpGet:
+                path: /health
+                port: http
+              initialDelaySeconds: 15
+              periodSeconds: 20
+              timeoutSeconds: 2
+            name: bot
+            ports:
+            - containerPort: 8080
+              name: http
+            readinessProbe:
+              failureThreshold: 3
+              httpGet:
+                path: /health
+                port: http
+              initialDelaySeconds: 1
+              periodSeconds: 2
+              timeoutSeconds: 1
+            resources:
+              limits:
+                memory: 512Mi
+              requests:
+                cpu: 100m
+                memory: 128Mi
+            volumeMounts:
+            - mountPath: /app/data
+              name: data
+          imagePullSecrets:
+          - name: harbor-pull-secret
+          volumes:
+          - name: data
+            persistentVolumeClaim:
+              claimName: architect-business-bot-data
+    ---
+    apiVersion: external-secrets.io/v1
+    kind: ExternalSecret
+    metadata:
+      name: architect-business-bot-env
+      namespace: architect-business-bot
+    spec:
+      data:
+      - remoteRef:
+          conversionStrategy: Default
+          decodingStrategy: None
+          key: workload-1/architect-business-bot
+          metadataPolicy: None
+          nullBytePolicy: Ignore
+          property: bot_token
+        secretKey: BOT_TOKEN
+      - remoteRef:
+          conversionStrategy: Default
+          decodingStrategy: None
+          key: workload-1/architect-business-bot
+          metadataPolicy: None
+          nullBytePolicy: Ignore
+          property: deepseek_api_key
+        secretKey: DEEPSEEK_API_KEY
+      - remoteRef:
+          conversionStrategy: Default
+          decodingStrategy: None
+          key: workload-1/architect-business-bot
+          metadataPolicy: None
+          nullBytePolicy: Ignore
+          property: webhook_secret
+        secretKey: WEBHOOK_SECRET
+      refreshInterval: 5m
+      secretStoreRef:
+        kind: ClusterSecretStore
+        name: vault-backend
+      target:
+        creationPolicy: Owner
+        deletionPolicy: Retain
+        name: architect-business-bot-env
+    ---
+    apiVersion: external-secrets.io/v1
+    kind: ExternalSecret
+    metadata:
+      name: harbor-pull-secret
+      namespace: architect-business-bot
+    spec:
+      data:
+      - remoteRef:
+          conversionStrategy: Default
+          decodingStrategy: None
+          key: shared/harbor
+          metadataPolicy: None
+          nullBytePolicy: Ignore
+          property: username
+        secretKey: username
+      - remoteRef:
+          conversionStrategy: Default
+          decodingStrategy: None
+          key: shared/harbor
+          metadataPolicy: None
+          nullBytePolicy: Ignore
+          property: password
+        secretKey: password
+      refreshInterval: 5m
+      secretStoreRef:
+        kind: ClusterSecretStore
+        name: vault-backend
+      target:
+        creationPolicy: Owner
+        deletionPolicy: Retain
+        name: harbor-pull-secret
+        template:
+          data:
+            .dockerconfigjson: |
+              {"auths":{"harbor.api-api-api.com":{"username":"{{ .username }}","password":"{{ .password }}","auth":"{{ printf "%s:%s" .username .password | b64enc }}"}}}
+          type: kubernetes.io/dockerconfigjson
+    ---
+    apiVersion: networking.k8s.io/v1
+    kind: Ingress
+    metadata:
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt-production
+        external-dns.alpha.kubernetes.io/hostname: architect-business-bot.api-api-api.com
+        external-dns.alpha.kubernetes.io/target: a6aaa50f-2590-4179-84f2-d0f18bce0587.cfargotunnel.com
+      name: architect-business-bot
+      namespace: architect-business-bot
+    spec:
+      ingressClassName: traefik
+      rules:
+      - host: architect-business-bot.api-api-api.com
+        http:
+          paths:
+          - backend:
+              service:
+                name: architect-business-bot
+                port:
+                  name: http
+            path: /
+            pathType: Prefix
+      tls:
+      - hosts:
+        - architect-business-bot.api-api-api.com
+        secretName: architect-business-bot-tls

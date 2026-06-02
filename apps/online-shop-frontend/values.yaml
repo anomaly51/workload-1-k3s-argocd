@@ -1,0 +1,102 @@
+common-app:
+  namespace:
+    create: false
+  images:
+    frontend:
+      repository: harbor.api-api-api.com/online-shop/frontend
+      tag: main-43-9603db6013888a55d6866bb60e5956e1248cff73
+  rawManifests: |
+    apiVersion: v1
+    kind: Namespace
+    metadata:
+      name: online-shop-frontend
+    ---
+    apiVersion: v1
+    kind: Service
+    metadata:
+      name: online-shop-frontend
+      namespace: online-shop-frontend
+    spec:
+      ports:
+      - port: 80
+        targetPort: 80
+      selector:
+        app: online-shop-frontend
+    ---
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: online-shop-frontend
+      namespace: online-shop-frontend
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app: online-shop-frontend
+      template:
+        metadata:
+          labels:
+            app: online-shop-frontend
+        spec:
+          containers:
+          - image: __IMAGE_frontend__
+            name: online-shop-frontend
+            ports:
+            - containerPort: 80
+          imagePullSecrets:
+          - name: harbor-pull-secret
+    ---
+    apiVersion: external-secrets.io/v1
+    kind: ExternalSecret
+    metadata:
+      name: harbor-pull-secret
+      namespace: online-shop-frontend
+    spec:
+      data:
+      - remoteRef:
+          key: shared/harbor
+          property: username
+        secretKey: username
+      - remoteRef:
+          key: shared/harbor
+          property: password
+        secretKey: password
+      refreshInterval: 1h
+      secretStoreRef:
+        kind: ClusterSecretStore
+        name: vault-backend
+      target:
+        creationPolicy: Owner
+        name: harbor-pull-secret
+        template:
+          data:
+            .dockerconfigjson: |
+              {"auths":{"harbor.api-api-api.com":{"username":"{{ .username }}","password":"{{ .password }}","auth":"{{ printf "%s:%s" .username .password | b64enc }}"}}}
+          type: kubernetes.io/dockerconfigjson
+    ---
+    apiVersion: networking.k8s.io/v1
+    kind: Ingress
+    metadata:
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt-production
+        external-dns.alpha.kubernetes.io/hostname: online-shop.api-api-api.com
+        external-dns.alpha.kubernetes.io/target: a6aaa50f-2590-4179-84f2-d0f18bce0587.cfargotunnel.com
+      name: online-shop-frontend
+      namespace: online-shop-frontend
+    spec:
+      ingressClassName: traefik
+      rules:
+      - host: online-shop.api-api-api.com
+        http:
+          paths:
+          - backend:
+              service:
+                name: online-shop-frontend
+                port:
+                  number: 80
+            path: /
+            pathType: Prefix
+      tls:
+      - hosts:
+        - online-shop.api-api-api.com
+        secretName: online-shop-frontend-tls

@@ -1,0 +1,675 @@
+common-app:
+  namespace:
+    create: false
+  images:
+    app:
+      repository: harbor.api-api-api.com/uptime-monitor/app
+      tag: main-25-bd76054aad4c2253276b5400e9a5e5c182ee0d86
+  rawManifests: |
+    apiVersion: v1
+    kind: Namespace
+    metadata:
+      labels:
+        app.kubernetes.io/name: uptime-monitor
+        app.kubernetes.io/part-of: workload-1
+      name: uptime-monitor
+    ---
+    apiVersion: v1
+    kind: Service
+    metadata:
+      labels:
+        app.kubernetes.io/name: uptime-monitor-postgres
+        app.kubernetes.io/part-of: workload-1
+      name: postgres
+      namespace: uptime-monitor
+    spec:
+      ports:
+      - name: postgres
+        port: 5432
+        targetPort: postgres
+      selector:
+        app.kubernetes.io/name: uptime-monitor-postgres
+      type: ClusterIP
+    ---
+    apiVersion: v1
+    kind: Service
+    metadata:
+      labels:
+        app.kubernetes.io/name: uptime-monitor-rabbitmq
+        app.kubernetes.io/part-of: workload-1
+      name: rabbitmq
+      namespace: uptime-monitor
+    spec:
+      ports:
+      - name: amqp
+        port: 5672
+        targetPort: amqp
+      - name: management
+        port: 15672
+        targetPort: management
+      selector:
+        app.kubernetes.io/name: uptime-monitor-rabbitmq
+      type: ClusterIP
+    ---
+    apiVersion: v1
+    kind: Service
+    metadata:
+      annotations:
+        prometheus.io/path: /metrics
+        prometheus.io/port: "8000"
+        prometheus.io/scrape: "true"
+      labels:
+        app.kubernetes.io/name: uptime-monitor
+        app.kubernetes.io/part-of: workload-1
+      name: uptime-monitor
+      namespace: uptime-monitor
+    spec:
+      ports:
+      - name: http
+        port: 80
+        targetPort: http
+      selector:
+        app.kubernetes.io/name: uptime-monitor-api
+      type: ClusterIP
+    ---
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      annotations:
+        argocd.argoproj.io/sync-wave: "1"
+      labels:
+        app.kubernetes.io/name: uptime-monitor-api
+        app.kubernetes.io/part-of: workload-1
+      name: uptime-monitor-api
+      namespace: uptime-monitor
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: uptime-monitor-api
+      strategy:
+        rollingUpdate:
+          maxSurge: 1
+          maxUnavailable: 0
+        type: RollingUpdate
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: uptime-monitor-api
+            app.kubernetes.io/part-of: workload-1
+        spec:
+          containers:
+          - env:
+            - name: APP_VERSION
+              value: main-25-bd76054aad4c2253276b5400e9a5e5c182ee0d86
+            - name: PROJECT_NAME
+              value: Uptime Monitor
+            - name: APP_BASE_URL
+              value: https://uptime-monitor.api-api-api.com
+            - name: JWT_ISSUER
+              value: uptime-monitor-api
+            - name: JWT_AUDIENCE
+              value: uptime-monitor-client
+            - name: ACCESS_TOKEN_EXPIRE_MINUTES
+              value: "1440"
+            - name: REFRESH_TOKEN_EXPIRE_DAYS
+              value: "14"
+            - name: GOOGLE_CLIENT_ID
+              value: 348661487643-kv602ltivacmm7k4crirrtnni2ibqefl.apps.googleusercontent.com
+            - name: GOOGLE_CLIENT_IDS
+              value: ""
+            - name: SMTP_HOST
+              value: ""
+            - name: SMTP_PORT
+              value: "587"
+            - name: SMTP_USERNAME
+              value: ""
+            - name: SMTP_PASSWORD
+              value: ""
+            - name: SMTP_FROM_EMAIL
+              value: ""
+            - name: SMTP_USE_TLS
+              value: "true"
+            - name: BILLING_PROVIDER
+              value: manual
+            - name: BILLING_CHECKOUT_BASE_URL
+              value: ""
+            - name: STRIPE_SECRET_KEY
+              value: ""
+            - name: STRIPE_STARTER_PRICE_ID
+              value: ""
+            - name: STRIPE_PRO_PRICE_ID
+              value: ""
+            - name: STRIPE_WEBHOOK_SECRET
+              value: ""
+            - name: PADDLE_API_KEY
+              value: ""
+            - name: PADDLE_ENVIRONMENT
+              value: production
+            - name: PADDLE_STARTER_PRICE_ID
+              value: ""
+            - name: PADDLE_PRO_PRICE_ID
+              value: ""
+            - name: PADDLE_WEBHOOK_SECRET
+              value: ""
+            - name: CHECK_QUEUE_NAME
+              value: monitor_checks
+            - name: SCHEDULER_TICK_SECONDS
+              value: "30"
+            envFrom:
+            - secretRef:
+                name: uptime-monitor-env
+            image: __IMAGE_app__
+            imagePullPolicy: IfNotPresent
+            livenessProbe:
+              failureThreshold: 3
+              httpGet:
+                path: /ready
+                port: http
+              initialDelaySeconds: 30
+              periodSeconds: 20
+              timeoutSeconds: 3
+            name: api
+            ports:
+            - containerPort: 8000
+              name: http
+            readinessProbe:
+              failureThreshold: 12
+              httpGet:
+                path: /health
+                port: http
+              initialDelaySeconds: 10
+              periodSeconds: 5
+              timeoutSeconds: 3
+            resources:
+              limits:
+                memory: 768Mi
+              requests:
+                cpu: 100m
+                memory: 256Mi
+          imagePullSecrets:
+          - name: harbor-pull-secret
+          initContainers:
+          - command:
+            - sh
+            - -c
+            - until nc -z postgres 5432; do sleep 2; done
+            image: busybox:1.36
+            imagePullPolicy: IfNotPresent
+            name: wait-for-postgres
+    ---
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      annotations:
+        argocd.argoproj.io/sync-wave: "2"
+      labels:
+        app.kubernetes.io/name: uptime-monitor-bot
+        app.kubernetes.io/part-of: workload-1
+      name: uptime-monitor-bot
+      namespace: uptime-monitor
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: uptime-monitor-bot
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: uptime-monitor-bot
+            app.kubernetes.io/part-of: workload-1
+        spec:
+          containers:
+          - command:
+            - python
+            - -m
+            - app.bot
+            env:
+            - name: APP_VERSION
+              value: main-25-bd76054aad4c2253276b5400e9a5e5c182ee0d86
+            - name: PROJECT_NAME
+              value: Uptime Monitor
+            - name: APP_BASE_URL
+              value: https://uptime-monitor.api-api-api.com
+            envFrom:
+            - secretRef:
+                name: uptime-monitor-env
+            image: __IMAGE_app__
+            imagePullPolicy: IfNotPresent
+            name: bot
+            resources:
+              limits:
+                memory: 512Mi
+              requests:
+                cpu: 50m
+                memory: 128Mi
+          imagePullSecrets:
+          - name: harbor-pull-secret
+    ---
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      annotations:
+        argocd.argoproj.io/sync-wave: "2"
+      labels:
+        app.kubernetes.io/name: uptime-monitor-scheduler
+        app.kubernetes.io/part-of: workload-1
+      name: uptime-monitor-scheduler
+      namespace: uptime-monitor
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: uptime-monitor-scheduler
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: uptime-monitor-scheduler
+            app.kubernetes.io/part-of: workload-1
+        spec:
+          containers:
+          - command:
+            - python
+            - -m
+            - app.scheduler
+            env:
+            - name: APP_VERSION
+              value: main-25-bd76054aad4c2253276b5400e9a5e5c182ee0d86
+            - name: PROJECT_NAME
+              value: Uptime Monitor
+            - name: APP_BASE_URL
+              value: https://uptime-monitor.api-api-api.com
+            - name: CHECK_QUEUE_NAME
+              value: monitor_checks
+            - name: SCHEDULER_TICK_SECONDS
+              value: "30"
+            envFrom:
+            - secretRef:
+                name: uptime-monitor-env
+            image: __IMAGE_app__
+            imagePullPolicy: IfNotPresent
+            name: scheduler
+            resources:
+              limits:
+                memory: 768Mi
+              requests:
+                cpu: 100m
+                memory: 256Mi
+          imagePullSecrets:
+          - name: harbor-pull-secret
+    ---
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      annotations:
+        argocd.argoproj.io/sync-wave: "2"
+      labels:
+        app.kubernetes.io/name: uptime-monitor-worker
+        app.kubernetes.io/part-of: workload-1
+      name: uptime-monitor-worker
+      namespace: uptime-monitor
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: uptime-monitor-worker
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: uptime-monitor-worker
+            app.kubernetes.io/part-of: workload-1
+        spec:
+          containers:
+          - command:
+            - python
+            - -m
+            - app.worker
+            env:
+            - name: APP_VERSION
+              value: main-25-bd76054aad4c2253276b5400e9a5e5c182ee0d86
+            - name: PROJECT_NAME
+              value: Uptime Monitor
+            - name: APP_BASE_URL
+              value: https://uptime-monitor.api-api-api.com
+            - name: CHECK_QUEUE_NAME
+              value: monitor_checks
+            envFrom:
+            - secretRef:
+                name: uptime-monitor-env
+            image: __IMAGE_app__
+            imagePullPolicy: IfNotPresent
+            name: worker
+            resources:
+              limits:
+                memory: 768Mi
+              requests:
+                cpu: 100m
+                memory: 256Mi
+          imagePullSecrets:
+          - name: harbor-pull-secret
+    ---
+    apiVersion: apps/v1
+    kind: StatefulSet
+    metadata:
+      annotations:
+        argocd.argoproj.io/sync-wave: "-2"
+      labels:
+        app.kubernetes.io/name: uptime-monitor-postgres
+        app.kubernetes.io/part-of: workload-1
+      name: postgres
+      namespace: uptime-monitor
+    spec:
+      persistentVolumeClaimRetentionPolicy:
+        whenDeleted: Retain
+        whenScaled: Retain
+      podManagementPolicy: OrderedReady
+      replicas: 1
+      revisionHistoryLimit: 10
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: uptime-monitor-postgres
+      serviceName: postgres
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: uptime-monitor-postgres
+            app.kubernetes.io/part-of: workload-1
+        spec:
+          containers:
+          - env:
+            - name: POSTGRES_DB
+              value: uptime
+            - name: POSTGRES_USER
+              value: uptime
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: POSTGRES_PASSWORD
+                  name: uptime-monitor-env
+            image: postgres:16-alpine
+            imagePullPolicy: IfNotPresent
+            name: postgres
+            ports:
+            - containerPort: 5432
+              name: postgres
+              protocol: TCP
+            readinessProbe:
+              exec:
+                command:
+                - sh
+                - -c
+                - pg_isready -U uptime -d uptime
+              failureThreshold: 6
+              initialDelaySeconds: 5
+              periodSeconds: 10
+              successThreshold: 1
+              timeoutSeconds: 3
+            resources:
+              limits:
+                memory: 512Mi
+              requests:
+                cpu: 100m
+                memory: 128Mi
+            terminationMessagePath: /dev/termination-log
+            terminationMessagePolicy: File
+            volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: data
+          dnsPolicy: ClusterFirst
+          restartPolicy: Always
+          schedulerName: default-scheduler
+          securityContext: {}
+          terminationGracePeriodSeconds: 30
+      updateStrategy:
+        rollingUpdate:
+          partition: 0
+        type: RollingUpdate
+      volumeClaimTemplates:
+      - metadata:
+          annotations:
+            argocd.argoproj.io/sync-options: Delete=false,Prune=false
+            helm.sh/resource-policy: keep
+          name: data
+        spec:
+          accessModes:
+          - ReadWriteOnce
+          resources:
+            requests:
+              storage: 5Gi
+          storageClassName: nfs-client
+          volumeMode: Filesystem
+    ---
+    apiVersion: apps/v1
+    kind: StatefulSet
+    metadata:
+      annotations:
+        argocd.argoproj.io/sync-wave: "-2"
+      labels:
+        app.kubernetes.io/name: uptime-monitor-rabbitmq
+        app.kubernetes.io/part-of: workload-1
+      name: rabbitmq
+      namespace: uptime-monitor
+    spec:
+      persistentVolumeClaimRetentionPolicy:
+        whenDeleted: Retain
+        whenScaled: Retain
+      podManagementPolicy: OrderedReady
+      replicas: 1
+      revisionHistoryLimit: 10
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: uptime-monitor-rabbitmq
+      serviceName: rabbitmq
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: uptime-monitor-rabbitmq
+            app.kubernetes.io/part-of: workload-1
+        spec:
+          containers:
+          - env:
+            - name: RABBITMQ_DEFAULT_USER
+              value: uptime
+            - name: RABBITMQ_DEFAULT_PASS
+              valueFrom:
+                secretKeyRef:
+                  key: RABBITMQ_DEFAULT_PASS
+                  name: uptime-monitor-env
+            image: rabbitmq:3-management-alpine
+            imagePullPolicy: IfNotPresent
+            livenessProbe:
+              exec:
+                command:
+                - rabbitmq-diagnostics
+                - -q
+                - status
+              failureThreshold: 3
+              initialDelaySeconds: 30
+              periodSeconds: 30
+              successThreshold: 1
+              timeoutSeconds: 10
+            name: rabbitmq
+            ports:
+            - containerPort: 5672
+              name: amqp
+              protocol: TCP
+            - containerPort: 15672
+              name: management
+              protocol: TCP
+            readinessProbe:
+              exec:
+                command:
+                - rabbitmq-diagnostics
+                - -q
+                - ping
+              failureThreshold: 6
+              initialDelaySeconds: 10
+              periodSeconds: 10
+              successThreshold: 1
+              timeoutSeconds: 5
+            resources:
+              limits:
+                memory: 768Mi
+              requests:
+                cpu: 100m
+                memory: 256Mi
+            terminationMessagePath: /dev/termination-log
+            terminationMessagePolicy: File
+            volumeMounts:
+            - mountPath: /var/lib/rabbitmq
+              name: data
+          dnsPolicy: ClusterFirst
+          restartPolicy: Always
+          schedulerName: default-scheduler
+          securityContext: {}
+          terminationGracePeriodSeconds: 30
+      updateStrategy:
+        rollingUpdate:
+          partition: 0
+        type: RollingUpdate
+      volumeClaimTemplates:
+      - metadata:
+          annotations:
+            argocd.argoproj.io/sync-options: Delete=false,Prune=false
+            helm.sh/resource-policy: keep
+          name: data
+        spec:
+          accessModes:
+          - ReadWriteOnce
+          resources:
+            requests:
+              storage: 2Gi
+          storageClassName: nfs-client
+          volumeMode: Filesystem
+    ---
+    apiVersion: external-secrets.io/v1
+    kind: ExternalSecret
+    metadata:
+      annotations:
+        argocd.argoproj.io/sync-wave: "-3"
+      name: harbor-pull-secret
+      namespace: uptime-monitor
+    spec:
+      data:
+      - remoteRef:
+          conversionStrategy: Default
+          decodingStrategy: None
+          key: shared/harbor
+          metadataPolicy: None
+          nullBytePolicy: Ignore
+          property: username
+        secretKey: username
+      - remoteRef:
+          conversionStrategy: Default
+          decodingStrategy: None
+          key: shared/harbor
+          metadataPolicy: None
+          nullBytePolicy: Ignore
+          property: password
+        secretKey: password
+      refreshInterval: 1h
+      secretStoreRef:
+        kind: ClusterSecretStore
+        name: vault-backend
+      target:
+        creationPolicy: Owner
+        deletionPolicy: Retain
+        name: harbor-pull-secret
+        template:
+          data:
+            .dockerconfigjson: |
+              {"auths":{"harbor.api-api-api.com":{"username":"{{ .username }}","password":"{{ .password }}","auth":"{{ printf "%s:%s" .username .password | b64enc }}"}}}
+          type: kubernetes.io/dockerconfigjson
+    ---
+    apiVersion: external-secrets.io/v1
+    kind: ExternalSecret
+    metadata:
+      annotations:
+        argocd.argoproj.io/sync-wave: "-3"
+      name: uptime-monitor-env
+      namespace: uptime-monitor
+    spec:
+      data:
+      - remoteRef:
+          conversionStrategy: Default
+          decodingStrategy: None
+          key: workload-1/uptime-monitor
+          metadataPolicy: None
+          nullBytePolicy: Ignore
+          property: database_url
+        secretKey: DATABASE_URL
+      - remoteRef:
+          conversionStrategy: Default
+          decodingStrategy: None
+          key: workload-1/uptime-monitor
+          metadataPolicy: None
+          nullBytePolicy: Ignore
+          property: rabbitmq_url
+        secretKey: RABBITMQ_URL
+      - remoteRef:
+          conversionStrategy: Default
+          decodingStrategy: None
+          key: workload-1/uptime-monitor
+          metadataPolicy: None
+          nullBytePolicy: Ignore
+          property: jwt_secret
+        secretKey: JWT_SECRET
+      - remoteRef:
+          conversionStrategy: Default
+          decodingStrategy: None
+          key: workload-1/uptime-monitor
+          metadataPolicy: None
+          nullBytePolicy: Ignore
+          property: telegram_bot_token
+        secretKey: TELEGRAM_BOT_TOKEN
+      - remoteRef:
+          conversionStrategy: Default
+          decodingStrategy: None
+          key: workload-1/uptime-monitor
+          metadataPolicy: None
+          nullBytePolicy: Ignore
+          property: postgres_password
+        secretKey: POSTGRES_PASSWORD
+      - remoteRef:
+          conversionStrategy: Default
+          decodingStrategy: None
+          key: workload-1/uptime-monitor
+          metadataPolicy: None
+          nullBytePolicy: Ignore
+          property: rabbitmq_password
+        secretKey: RABBITMQ_DEFAULT_PASS
+      refreshInterval: 5m
+      secretStoreRef:
+        kind: ClusterSecretStore
+        name: vault-backend
+      target:
+        creationPolicy: Owner
+        deletionPolicy: Retain
+        name: uptime-monitor-env
+    ---
+    apiVersion: networking.k8s.io/v1
+    kind: Ingress
+    metadata:
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt-production
+        external-dns.alpha.kubernetes.io/hostname: uptime-monitor.api-api-api.com
+        external-dns.alpha.kubernetes.io/target: a6aaa50f-2590-4179-84f2-d0f18bce0587.cfargotunnel.com
+      name: uptime-monitor
+      namespace: uptime-monitor
+    spec:
+      ingressClassName: traefik
+      rules:
+      - host: uptime-monitor.api-api-api.com
+        http:
+          paths:
+          - backend:
+              service:
+                name: uptime-monitor
+                port:
+                  name: http
+            path: /
+            pathType: Prefix
+      tls:
+      - hosts:
+        - uptime-monitor.api-api-api.com
+        secretName: uptime-monitor-tls
