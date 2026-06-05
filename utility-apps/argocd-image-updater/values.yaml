@@ -270,7 +270,7 @@ argocd-image-updater:
         writeBackConfig:
           method: git:secret:argocd/argocd-image-updater-git-creds
           gitConfig:
-            repository: https://github.com/anomaly51/workload-1-k3s-argocd.git
+            repository: https://github.com/anomaly51/utility-k3s-argocd.git
             branch: main
             writeBackTarget: helmvalues:./values.yaml
         applicationRefs:
