@@ -11,6 +11,7 @@ spec:
   - https://charts.external-secrets.io
   - https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/
   - https://kubernetes-sigs.github.io/external-dns/
+  - https://argoproj.github.io/argo-helm
   - harbor.api-api-api.com/helm-charts
   destinations:
   - server: https://kubernetes.default.svc
