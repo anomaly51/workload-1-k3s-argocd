@@ -1,31 +1,23 @@
----
 app:
   name: online-shop-frontend
   resourceName: online-shop-frontend
-
   namespace:
     create: true
     name: online-shop-frontend
-
   image:
     repository: harbor.api-api-api.com/online-shop/frontend
-    tag: main-43-9603db6013888a55d6866bb60e5956e1248cff73
-
+    tag: sha-b0dc3b0c1c4d
   registryPullSecret:
     enabled: true
-
   selectorLabels:
     app: online-shop-frontend
-
   ports:
-    - name: http
-      containerPort: 80
-
+  - name: http
+    containerPort: 80
   service:
     enabled: true
     port: 80
     targetPort: 80
-
   ingress:
     enabled: true
     host: online-shop.api-api-api.com
