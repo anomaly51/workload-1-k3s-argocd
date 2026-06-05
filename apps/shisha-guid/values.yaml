@@ -1,5 +1,6 @@
 app:
   name: backend
+  fullnameOverride: backend
   resourceName: backend
   namespace:
     create: true
