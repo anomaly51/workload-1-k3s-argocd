@@ -2,6 +2,8 @@
 app:
   namespace:
     create: false
+  registryPullSecret:
+    enabled: true
   images:
     backend:
       repository: harbor.api-api-api.com/online-shop/backend
@@ -121,6 +123,8 @@ app:
           labels:
             app: online-shop-backend
         spec:
+          imagePullSecrets:
+          - name: harbor-pull-secret
           containers:
           - env:
             - name: POSTGRES_USER

@@ -15,6 +15,9 @@ app:
     repository: harbor.api-api-api.com/architect-business-bot/bot
     tag: main-51-8db91202e65591f937b200e478817e3889343ea6
 
+  registryPullSecret:
+    enabled: true
+
   containerName: bot
   selectorLabels:
     app.kubernetes.io/name: architect-business-bot

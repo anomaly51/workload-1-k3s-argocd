@@ -11,6 +11,9 @@ app:
     repository: harbor.api-api-api.com/online-shop/frontend
     tag: main-43-9603db6013888a55d6866bb60e5956e1248cff73
 
+  registryPullSecret:
+    enabled: true
+
   selectorLabels:
     app: online-shop-frontend
 

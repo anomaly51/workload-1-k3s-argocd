@@ -2,6 +2,8 @@
 app:
   namespace:
     create: false
+  registryPullSecret:
+    enabled: true
   images:
     backend:
       repository: harbor.api-api-api.com/pingme/backend
@@ -67,6 +69,8 @@ app:
             app.kubernetes.io/name: pingme-backend
             app.kubernetes.io/part-of: workload-1
         spec:
+          imagePullSecrets:
+          - name: harbor-pull-secret
           containers:
           - env:
             - name: APP_VERSION

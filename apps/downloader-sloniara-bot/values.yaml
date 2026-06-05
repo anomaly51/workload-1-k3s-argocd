@@ -11,6 +11,9 @@ app:
     repository: harbor.api-api-api.com/downloader-sloniara-bot/bot
     tag: main-43-d9d0a602bbb6c97911080dee2c8612a41a25af99
 
+  registryPullSecret:
+    enabled: true
+
   containerName: bot
   selectorLabels:
     app: downloader-sloniara-bot

@@ -15,6 +15,9 @@ app:
     repository: harbor.api-api-api.com/bot-motivation/motivator-bot
     tag: main-6-7f5fd085c1dd2206a9c73aa4cb0e40824fa47c8d
 
+  registryPullSecret:
+    enabled: true
+
   containerName: motivator-bot
   selectorLabels:
     app.kubernetes.io/name: bot-motivation
