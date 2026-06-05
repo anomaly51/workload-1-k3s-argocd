@@ -1,1 +1,3 @@
-{}
+platform-vault-store:
+  vault:
+    server: https://vault.api-api-api.com
