@@ -28,6 +28,9 @@ argocd-image-updater:
     hostname: argocd-workload-1.api-api-api.com
     path: /webhook
     pathType: Prefix
+    annotations:
+      external-dns.alpha.kubernetes.io/hostname: argocd-workload-1.api-api-api.com
+      external-dns.alpha.kubernetes.io/target: bfaa4824-dabf-4534-8b2a-0cfa730ec2f1.cfargotunnel.com
     tls:
       - secretName: argocd-api-tls-secret
         hosts:
