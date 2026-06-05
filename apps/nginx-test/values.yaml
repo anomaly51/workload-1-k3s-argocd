@@ -1,4 +1,4 @@
-common-app:
+app:
   namespace:
     create: true
     name: nginx-test
