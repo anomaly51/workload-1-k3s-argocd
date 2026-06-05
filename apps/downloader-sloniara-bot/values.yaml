@@ -6,7 +6,7 @@ app:
     name: downloader-sloniara-bot
   image:
     repository: harbor.api-api-api.com/downloader-sloniara-bot/bot
-    tag: sha-3c5bb1835af1
+    tag: sha-d0c76c83a0f6
   registryPullSecret:
     enabled: true
   containerName: bot
