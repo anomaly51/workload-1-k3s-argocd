@@ -7,6 +7,8 @@ app:
   image:
     repository: harbor.api-api-api.com/shisha/frontend
     tag: sha-74e0df1149e0
+  registryPullSecret:
+    enabled: true
   selectorLabels:
     app: shisha-frontend
   ports:
