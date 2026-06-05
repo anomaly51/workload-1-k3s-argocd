@@ -1,30 +1,23 @@
----
 app:
   name: backend
   resourceName: backend
-
   namespace:
     create: true
     name: shisha-guid
     annotations:
       argocd.argoproj.io/sync-options: Delete=false,Prune=false
-
   image:
     repository: harbor.api-api-api.com/shisha/backend
-    tag: main-42-e9a41fe04e091527ad141b07d4aa74199992c456
-
+    tag: sha-fedfdb71c0cd
   selectorLabels:
     app: backend
-
   ports:
-    - name: http
-      containerPort: 8000
-
+  - name: http
+    containerPort: 8000
   service:
     enabled: true
     port: 80
     targetPort: 8000
-
   env:
     MINIO_ENDPOINT: minio.shisha-guid.svc.cluster.local:9000
     MINIO_ACCESS_KEY: minioadmin
@@ -34,52 +27,47 @@ app:
     API_PUBLIC_URL: https://shisha-guid-api.api-api-api.com
     OPENROUTER_MODEL: sao10k/l3-lunaris-8b
     OPENAI_TRANSCRIBE_MODEL: whisper-1
-
   envFrom:
-    - secretRef:
-        name: backend-secret
-
+  - secretRef:
+      name: backend-secret
   externalSecrets:
-    - name: backend-secret
-      data:
-        - secretKey: DATABASE_URL
-          remoteRef:
-            key: workload-1/shisha-guid-backend
-            property: database_url
-        - secretKey: SECRET_KEY
-          remoteRef:
-            key: workload-1/shisha-guid-backend
-            property: secret_key
-        - secretKey: GOOGLE_CLIENT_ID
-          remoteRef:
-            key: workload-1/shisha-guid-backend
-            property: google_client_id
-        - secretKey: GOOGLE_CLIENT_SECRET
-          remoteRef:
-            key: workload-1/shisha-guid-backend
-            property: google_client_secret
-        - secretKey: OPENROUTER_API_KEY
-          remoteRef:
-            key: workload-1/shisha-guid-backend
-            property: openrouter_api_key
-        - secretKey: OPENAI_API_KEY
-          remoteRef:
-            key: workload-1/shisha-guid-backend
-            property: openai_api_key
-
-    - name: postgres-secret
-      refreshInterval: 1h
-      data:
-        - secretKey: password
-          remoteRef:
-            key: workload-1/shisha-guid-postgres
-            property: password
-
+  - name: backend-secret
+    data:
+    - secretKey: DATABASE_URL
+      remoteRef:
+        key: workload-1/shisha-guid-backend
+        property: database_url
+    - secretKey: SECRET_KEY
+      remoteRef:
+        key: workload-1/shisha-guid-backend
+        property: secret_key
+    - secretKey: GOOGLE_CLIENT_ID
+      remoteRef:
+        key: workload-1/shisha-guid-backend
+        property: google_client_id
+    - secretKey: GOOGLE_CLIENT_SECRET
+      remoteRef:
+        key: workload-1/shisha-guid-backend
+        property: google_client_secret
+    - secretKey: OPENROUTER_API_KEY
+      remoteRef:
+        key: workload-1/shisha-guid-backend
+        property: openrouter_api_key
+    - secretKey: OPENAI_API_KEY
+      remoteRef:
+        key: workload-1/shisha-guid-backend
+        property: openai_api_key
+  - name: postgres-secret
+    refreshInterval: 1h
+    data:
+    - secretKey: password
+      remoteRef:
+        key: workload-1/shisha-guid-postgres
+        property: password
   ingress:
     enabled: true
     host: shisha-guid-api.api-api-api.com
     tlsSecretName: shisha-guid-api-tls
-
   addons:
     minio:
       enabled: true
@@ -93,7 +81,6 @@ app:
         rootPassword: minioadmin
       persistence:
         size: 10Gi
-
     postgres:
       enabled: true
       selectorLabels:
