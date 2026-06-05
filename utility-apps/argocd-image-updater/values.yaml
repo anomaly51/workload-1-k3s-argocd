@@ -25,17 +25,13 @@ argocd-image-updater:
   ingress:
     enabled: true
     ingressClassName: traefik
-    hostname: argocd-image-updater.api-api-api.com
+    hostname: argocd-workload-1.api-api-api.com
     path: /webhook
     pathType: Prefix
-    annotations:
-      cert-manager.io/cluster-issuer: letsencrypt-production
-      external-dns.alpha.kubernetes.io/hostname: argocd-image-updater.api-api-api.com
-      external-dns.alpha.kubernetes.io/target: bfaa4824-dabf-4534-8b2a-0cfa730ec2f1.cfargotunnel.com
     tls:
-      - secretName: argocd-image-updater-webhook-tls
+      - secretName: argocd-api-tls-secret
         hosts:
-          - argocd-image-updater.api-api-api.com
+          - argocd-workload-1.api-api-api.com
 
   extraObjects:
     - apiVersion: external-secrets.io/v1
