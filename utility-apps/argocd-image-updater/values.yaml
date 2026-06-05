@@ -4,7 +4,7 @@ argocd-image-updater:
 
   config:
     argocd.namespace: argocd
-    interval: 1m
+    interval: 10s
     git.user: github-actions[bot]
     git.email: 41898282+github-actions[bot]@users.noreply.github.com
     log.level: info
