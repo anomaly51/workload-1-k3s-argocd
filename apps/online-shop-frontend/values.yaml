@@ -6,7 +6,7 @@ app:
     name: online-shop-frontend
   image:
     repository: harbor.api-api-api.com/online-shop/frontend
-    tag: sha-b0dc3b0c1c4d
+    tag: sha-d5b5149b0fc9
   registryPullSecret:
     enabled: true
   selectorLabels:
