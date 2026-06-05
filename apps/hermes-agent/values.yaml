@@ -1,20 +1,20 @@
-common-app:
+---
+app:
   namespace:
     create: false
   images:
     gateway:
       repository: harbor.api-api-api.com/hermes-agent/gateway
       tag: main-19-f7c0cfc10ade126fba78186ca0714286a58659c4
-  rawManifests: |
-    apiVersion: v1
+  objects:
+  - apiVersion: v1
     kind: Namespace
     metadata:
       labels:
         app.kubernetes.io/name: hermes-agent
         app.kubernetes.io/part-of: workflow-2
       name: hermes-agent
-    ---
-    apiVersion: v1
+  - apiVersion: v1
     data:
       config.yaml: |
         model:
@@ -64,8 +64,7 @@ common-app:
     metadata:
       name: hermes-agent-config
       namespace: hermes-agent
-    ---
-    apiVersion: v1
+  - apiVersion: v1
     data:
       SKILL.md: |
         ---
@@ -105,8 +104,7 @@ common-app:
     metadata:
       name: hermes-agent-obsidian-inbox-skill
       namespace: hermes-agent
-    ---
-    apiVersion: v1
+  - apiVersion: v1
     kind: Service
     metadata:
       labels:
@@ -122,8 +120,7 @@ common-app:
       selector:
         app.kubernetes.io/name: hermes-agent
       type: ClusterIP
-    ---
-    apiVersion: v1
+  - apiVersion: v1
     kind: PersistentVolumeClaim
     metadata:
       annotations:
@@ -141,8 +138,7 @@ common-app:
         requests:
           storage: 10Gi
       storageClassName: nfs-client
-    ---
-    apiVersion: apps/v1
+  - apiVersion: apps/v1
     kind: Deployment
     metadata:
       labels:
@@ -174,11 +170,11 @@ common-app:
             - run
             env:
             - name: HERMES_HOME
-              value: /opt/data
+              value: "/opt/data"
             - name: HERMES_UID
-              value: "10000"
+              value: '10000'
             - name: HERMES_GID
-              value: "10000"
+              value: '10000'
             - name: HERMES_INFERENCE_PROVIDER
               value: openai-codex
             - name: HERMES_INFERENCE_MODEL
@@ -186,15 +182,15 @@ common-app:
             - name: HERMES_CODEX_BASE_URL
               value: https://chatgpt.com/backend-api/codex
             - name: GATEWAY_ALLOW_ALL_USERS
-              value: "true"
+              value: 'true'
             - name: TELEGRAM_REPLY_TO_MODE
               value: all
             - name: API_SERVER_ENABLED
-              value: "true"
+              value: 'true'
             - name: API_SERVER_HOST
               value: 0.0.0.0
             - name: API_SERVER_PORT
-              value: "8642"
+              value: '8642'
             - name: API_SERVER_CORS_ORIGINS
               value: https://hermes-agent.api-api-api.com
             - name: API_SERVER_MODEL_NAME
@@ -204,52 +200,59 @@ common-app:
             - name: STT_OPENAI_BASE_URL
               value: https://api.openai.com/v1
             - name: OBSIDIAN_VAULT_DIR
-              value: /opt/data/workspace/obsidian-vault
+              value: "/opt/data/workspace/obsidian-vault"
             - name: OBSIDIAN_INBOX_DIR
-              value: /opt/data/workspace/obsidian-vault/Inbox
+              value: "/opt/data/workspace/obsidian-vault/Inbox"
             envFrom:
             - secretRef:
                 name: hermes-agent-env
             image: __IMAGE_gateway__
             imagePullPolicy: IfNotPresent
             livenessProbe:
+              failureThreshold: 6
               httpGet:
-                path: /health
+                path: "/health"
                 port: http
-              initialDelaySeconds: 60
-              periodSeconds: 20
+              periodSeconds: 30
               timeoutSeconds: 5
             name: gateway
             ports:
             - containerPort: 8642
               name: http
             readinessProbe:
+              failureThreshold: 12
               httpGet:
-                path: /health
+                path: "/health"
                 port: http
-              initialDelaySeconds: 20
               periodSeconds: 10
               timeoutSeconds: 5
             resources:
               limits:
-                cpu: "2"
+                cpu: '2'
                 memory: 3Gi
               requests:
                 cpu: 500m
                 memory: 1Gi
+            startupProbe:
+              failureThreshold: 30
+              httpGet:
+                path: "/health"
+                port: http
+              periodSeconds: 10
+              timeoutSeconds: 5
             volumeMounts:
-            - mountPath: /opt/data
+            - mountPath: "/opt/data"
               name: data
-            - mountPath: /opt/data/config.yaml
+            - mountPath: "/opt/data/config.yaml"
               name: config
               readOnly: true
               subPath: config.yaml
-            - mountPath: /opt/data/skills/obsidian-inbox
+            - mountPath: "/opt/data/skills/obsidian-inbox"
               name: obsidian-inbox-skill
               readOnly: true
           - command:
             - sh
-            - -ec
+            - "-ec"
             - |
               export DEBIAN_FRONTEND=noninteractive
               CLI_REF="${OBSIDIAN_LIVESYNC_CLI_REF:-0.25.62}"
@@ -316,9 +319,9 @@ common-app:
             - name: OBSIDIAN_LIVESYNC_DB
               value: obsidiannotes
             - name: OBSIDIAN_VAULT_DIR
-              value: /opt/data/workspace/obsidian-vault
+              value: "/opt/data/workspace/obsidian-vault"
             - name: OBSIDIAN_INBOX_DIR
-              value: /opt/data/workspace/obsidian-vault/Inbox
+              value: "/opt/data/workspace/obsidian-vault/Inbox"
             envFrom:
             - secretRef:
                 name: hermes-agent-env
@@ -327,13 +330,13 @@ common-app:
             name: livesync-cli
             resources:
               limits:
-                cpu: "2"
+                cpu: '2'
                 memory: 3Gi
               requests:
                 cpu: 500m
                 memory: 1Gi
             volumeMounts:
-            - mountPath: /opt/data
+            - mountPath: "/opt/data"
               name: data
           imagePullSecrets:
           - name: harbor-pull-secret
@@ -347,8 +350,7 @@ common-app:
           - configMap:
               name: hermes-agent-obsidian-inbox-skill
             name: obsidian-inbox-skill
-    ---
-    apiVersion: external-secrets.io/v1
+  - apiVersion: external-secrets.io/v1
     kind: ExternalSecret
     metadata:
       name: harbor-pull-secret
@@ -381,11 +383,13 @@ common-app:
         name: harbor-pull-secret
         template:
           data:
-            .dockerconfigjson: |
-              {"auths":{"harbor.api-api-api.com":{"username":"{{ .username }}","password":"{{ .password }}","auth":"{{ printf "%s:%s" .username .password | b64enc }}"}}}
+            ".dockerconfigjson": '{"auths":{"harbor.api-api-api.com":{"username":"{{
+              .username }}","password":"{{ .password }}","auth":"{{ printf "%s:%s"
+              .username .password | b64enc }}"}}}
+
+'
           type: kubernetes.io/dockerconfigjson
-    ---
-    apiVersion: external-secrets.io/v1
+  - apiVersion: external-secrets.io/v1
     kind: ExternalSecret
     metadata:
       name: hermes-agent-env
@@ -464,8 +468,7 @@ common-app:
         creationPolicy: Owner
         deletionPolicy: Retain
         name: hermes-agent-env
-    ---
-    apiVersion: networking.k8s.io/v1
+  - apiVersion: networking.k8s.io/v1
     kind: Ingress
     metadata:
       annotations:
@@ -484,14 +487,13 @@ common-app:
                 name: hermes-agent
                 port:
                   name: http
-            path: /
+            path: "/"
             pathType: Prefix
       tls:
       - hosts:
         - hermes-agent.api-api-api.com
         secretName: hermes-agent-tls
-    ---
-    apiVersion: traefik.io/v1alpha1
+  - apiVersion: traefik.io/v1alpha1
     kind: Middleware
     metadata:
       labels:
@@ -502,5 +504,5 @@ common-app:
     spec:
       redirectRegex:
         permanent: false
-        regex: ^https?://hermes-agent\.api-api-api\.com/?$
+        regex: "^https?://hermes-agent\\.api-api-api\\.com/?$"
         replacement: https://hermes-agent.api-api-api.com/health

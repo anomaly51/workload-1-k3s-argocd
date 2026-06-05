@@ -1,4 +1,4 @@
 apiVersion: v2
-name: argocd-image-updater
+name: argocd-registry-access
 version: 0.1.0
 type: application

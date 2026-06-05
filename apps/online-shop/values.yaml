@@ -1,4 +1,5 @@
-common-app:
+---
+app:
   namespace:
     create: false
   images:
@@ -8,13 +9,12 @@ common-app:
     minio:
       repository: minio/minio
       tag: latest
-  rawManifests: |
-    apiVersion: v1
+  objects:
+  - apiVersion: v1
     kind: Namespace
     metadata:
       name: online-shop
-    ---
-    apiVersion: v1
+  - apiVersion: v1
     kind: Secret
     metadata:
       name: minio-secret
@@ -23,8 +23,7 @@ common-app:
       root-password: online-shop-123123
       root-user: online-shop
     type: Opaque
-    ---
-    apiVersion: v1
+  - apiVersion: v1
     kind: Service
     metadata:
       name: backend
@@ -35,8 +34,7 @@ common-app:
         targetPort: 8000
       selector:
         app: online-shop-backend
-    ---
-    apiVersion: v1
+  - apiVersion: v1
     kind: Service
     metadata:
       name: minio
@@ -51,8 +49,7 @@ common-app:
         targetPort: 9001
       selector:
         app: minio
-    ---
-    apiVersion: v1
+  - apiVersion: v1
     kind: Service
     metadata:
       name: minio-vpn
@@ -70,8 +67,7 @@ common-app:
       selector:
         app: minio
       type: NodePort
-    ---
-    apiVersion: v1
+  - apiVersion: v1
     kind: Service
     metadata:
       name: postgres
@@ -81,8 +77,7 @@ common-app:
       - port: 5432
       selector:
         app: postgres
-    ---
-    apiVersion: v1
+  - apiVersion: v1
     kind: Service
     metadata:
       name: postgres-vpn
@@ -96,8 +91,7 @@ common-app:
       selector:
         app: postgres
       type: NodePort
-    ---
-    apiVersion: v1
+  - apiVersion: v1
     kind: PersistentVolumeClaim
     metadata:
       annotations:
@@ -112,8 +106,7 @@ common-app:
         requests:
           storage: 5Gi
       storageClassName: nfs-client
-    ---
-    apiVersion: apps/v1
+  - apiVersion: apps/v1
     kind: Deployment
     metadata:
       name: backend
@@ -144,9 +137,9 @@ common-app:
             - name: ALGORITHM
               value: HS256
             - name: ACCESS_TOKEN_EXPIRE_MINUTES
-              value: "30"
+              value: '30'
             - name: REFRESH_TOKEN_EXPIRE_DAYS
-              value: "7"
+              value: '7'
             - name: APP_BASE_URL
               value: https://online-shop-api.api-api-api.com
             - name: GOOGLE_CLIENT_ID
@@ -168,14 +161,14 @@ common-app:
             - name: MINIO_BUCKET
               value: online-shop-products
             - name: MINIO_SECURE
-              value: "false"
+              value: 'false'
             envFrom:
             - secretRef:
                 name: backend-secret
             image: __IMAGE_backend__
             livenessProbe:
               httpGet:
-                path: /ready
+                path: "/ready"
                 port: 8000
               initialDelaySeconds: 20
               periodSeconds: 20
@@ -184,19 +177,19 @@ common-app:
             - containerPort: 8000
             readinessProbe:
               httpGet:
-                path: /health
+                path: "/health"
                 port: 8000
               initialDelaySeconds: 15
               periodSeconds: 10
             volumeMounts:
-            - mountPath: /code/static/uploads
+            - mountPath: "/code/static/uploads"
               name: uploads
           imagePullSecrets:
           - name: harbor-pull-secret
           initContainers:
           - command:
             - sh
-            - -c
+            - "-c"
             - |
               until python - <<'PY'
               import socket
@@ -222,9 +215,9 @@ common-app:
             - name: ALGORITHM
               value: HS256
             - name: ACCESS_TOKEN_EXPIRE_MINUTES
-              value: "30"
+              value: '30'
             - name: REFRESH_TOKEN_EXPIRE_DAYS
-              value: "7"
+              value: '7'
             - name: APP_BASE_URL
               value: https://online-shop-api.api-api-api.com
             - name: GOOGLE_CLIENT_ID
@@ -246,7 +239,7 @@ common-app:
             - name: MINIO_BUCKET
               value: online-shop-products
             - name: MINIO_SECURE
-              value: "false"
+              value: 'false'
             envFrom:
             - secretRef:
                 name: backend-secret
@@ -256,8 +249,7 @@ common-app:
           - name: uploads
             persistentVolumeClaim:
               claimName: backend-uploads
-    ---
-    apiVersion: apps/v1
+  - apiVersion: apps/v1
     kind: StatefulSet
     metadata:
       name: minio
@@ -276,8 +268,8 @@ common-app:
           containers:
           - args:
             - server
-            - /data
-            - --console-address
+            - "/data"
+            - "--console-address"
             - :9001
             env:
             - name: MINIO_ROOT_USER
@@ -296,7 +288,7 @@ common-app:
             - containerPort: 9000
             - containerPort: 9001
             volumeMounts:
-            - mountPath: /data
+            - mountPath: "/data"
               name: data
       volumeClaimTemplates:
       - metadata:
@@ -311,8 +303,7 @@ common-app:
             requests:
               storage: 10Gi
           storageClassName: nfs-client
-    ---
-    apiVersion: apps/v1
+  - apiVersion: apps/v1
     kind: StatefulSet
     metadata:
       name: postgres
@@ -347,12 +338,12 @@ common-app:
               exec:
                 command:
                 - sh
-                - -c
+                - "-c"
                 - pg_isready -U postgres -d app_db
               initialDelaySeconds: 5
               periodSeconds: 10
             volumeMounts:
-            - mountPath: /var/lib/postgresql/data
+            - mountPath: "/var/lib/postgresql/data"
               name: data
       volumeClaimTemplates:
       - metadata:
@@ -367,8 +358,7 @@ common-app:
             requests:
               storage: 5Gi
           storageClassName: nfs-client
-    ---
-    apiVersion: external-secrets.io/v1
+  - apiVersion: external-secrets.io/v1
     kind: ExternalSecret
     metadata:
       name: backend-secret
@@ -398,8 +388,7 @@ common-app:
       target:
         creationPolicy: Owner
         name: backend-secret
-    ---
-    apiVersion: external-secrets.io/v1
+  - apiVersion: external-secrets.io/v1
     kind: ExternalSecret
     metadata:
       name: harbor-pull-secret
@@ -423,11 +412,13 @@ common-app:
         name: harbor-pull-secret
         template:
           data:
-            .dockerconfigjson: |
-              {"auths":{"harbor.api-api-api.com":{"username":"{{ .username }}","password":"{{ .password }}","auth":"{{ printf "%s:%s" .username .password | b64enc }}"}}}
+            ".dockerconfigjson": '{"auths":{"harbor.api-api-api.com":{"username":"{{
+              .username }}","password":"{{ .password }}","auth":"{{ printf "%s:%s"
+              .username .password | b64enc }}"}}}
+
+'
           type: kubernetes.io/dockerconfigjson
-    ---
-    apiVersion: external-secrets.io/v1
+  - apiVersion: external-secrets.io/v1
     kind: ExternalSecret
     metadata:
       name: postgres-secret
@@ -445,8 +436,7 @@ common-app:
       target:
         creationPolicy: Owner
         name: postgres-secret
-    ---
-    apiVersion: networking.k8s.io/v1
+  - apiVersion: networking.k8s.io/v1
     kind: Ingress
     metadata:
       annotations:
@@ -464,7 +454,7 @@ common-app:
                 name: backend
                 port:
                   number: 80
-            path: /
+            path: "/"
             pathType: Prefix
       tls:
       - hosts:

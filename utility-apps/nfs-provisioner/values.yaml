@@ -6,5 +6,6 @@ nfs-subdir-external-provisioner:
     name: nfs-client
     provisionerName: cluster.local/nfs-subdir-external-provisioner
     defaultClass: true
-    archiveOnDelete: false
-    reclaimPolicy: Delete
+    archiveOnDelete: true
+    reclaimPolicy: Retain
+    pathPattern: "${.PVC.namespace}/${.PVC.name}"

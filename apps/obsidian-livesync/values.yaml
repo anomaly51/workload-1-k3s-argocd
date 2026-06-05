@@ -1,16 +1,16 @@
-common-app:
+---
+app:
   namespace:
     create: false
   images: {}
-  rawManifests: |
-    apiVersion: v1
+  objects:
+  - apiVersion: v1
     kind: Namespace
     metadata:
       labels:
         app.kubernetes.io/name: obsidian-livesync
       name: obsidian-livesync
-    ---
-    apiVersion: v1
+  - apiVersion: v1
     data:
       obsidian-livesync.ini: |
         [couchdb]
@@ -43,8 +43,7 @@ common-app:
     metadata:
       name: obsidian-livesync-couchdb-config
       namespace: obsidian-livesync
-    ---
-    apiVersion: v1
+  - apiVersion: v1
     kind: Service
     metadata:
       labels:
@@ -61,8 +60,7 @@ common-app:
         app.kubernetes.io/component: couchdb
         app.kubernetes.io/name: obsidian-livesync
       type: ClusterIP
-    ---
-    apiVersion: apps/v1
+  - apiVersion: apps/v1
     kind: StatefulSet
     metadata:
       annotations:
@@ -125,24 +123,24 @@ common-app:
                 cpu: 100m
                 memory: 256Mi
             volumeMounts:
-            - mountPath: /opt/couchdb/data
+            - mountPath: "/opt/couchdb/data"
               name: data
-            - mountPath: /opt/couchdb/etc/local.d
+            - mountPath: "/opt/couchdb/etc/local.d"
               name: local-config
           initContainers:
           - command:
             - sh
-            - -c
+            - "-c"
             - cp /config/obsidian-livesync.ini /local.d/obsidian-livesync.ini && chown
               -R 5984:5984 /opt/couchdb/data /local.d
             image: busybox:1.36
             name: fix-data-permissions
             volumeMounts:
-            - mountPath: /opt/couchdb/data
+            - mountPath: "/opt/couchdb/data"
               name: data
-            - mountPath: /config
+            - mountPath: "/config"
               name: config
-            - mountPath: /local.d
+            - mountPath: "/local.d"
               name: local-config
           securityContext:
             fsGroup: 5984
@@ -165,8 +163,7 @@ common-app:
             requests:
               storage: 10Gi
           storageClassName: nfs-client
-    ---
-    apiVersion: external-secrets.io/v1
+  - apiVersion: external-secrets.io/v1
     kind: ExternalSecret
     metadata:
       name: obsidian-livesync-couchdb
@@ -205,8 +202,7 @@ common-app:
         creationPolicy: Owner
         deletionPolicy: Retain
         name: obsidian-livesync-couchdb
-    ---
-    apiVersion: networking.k8s.io/v1
+  - apiVersion: networking.k8s.io/v1
     kind: Ingress
     metadata:
       annotations:
@@ -224,7 +220,7 @@ common-app:
                 name: obsidian-livesync-couchdb
                 port:
                   number: 5984
-            path: /
+            path: "/"
             pathType: Prefix
       tls:
       - hosts:

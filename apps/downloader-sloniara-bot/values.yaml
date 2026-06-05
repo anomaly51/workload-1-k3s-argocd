@@ -1,3 +1,4 @@
+---
 common-app:
   namespace:
     create: false
@@ -5,13 +6,12 @@ common-app:
     bot:
       repository: harbor.api-api-api.com/downloader-sloniara-bot/bot
       tag: main-43-d9d0a602bbb6c97911080dee2c8612a41a25af99
-  rawManifests: |
-    apiVersion: v1
+  objects:
+  - apiVersion: v1
     kind: Namespace
     metadata:
       name: downloader-sloniara-bot
-    ---
-    apiVersion: v1
+  - apiVersion: v1
     kind: PersistentVolumeClaim
     metadata:
       annotations:
@@ -26,8 +26,7 @@ common-app:
         requests:
           storage: 1Gi
       storageClassName: nfs-client
-    ---
-    apiVersion: apps/v1
+  - apiVersion: apps/v1
     kind: Deployment
     metadata:
       name: bot
@@ -47,7 +46,7 @@ common-app:
           initContainers:
           - command:
             - sh
-            - -c
+            - "-c"
             - |
               if [ ! -s /session/prod_user.session ] && [ -s /session-secret/prod_user.session ]; then
                 cp /session-secret/prod_user.session /session/prod_user.session
@@ -56,27 +55,27 @@ common-app:
             image: busybox:1.36
             name: seed-session
             volumeMounts:
-            - mountPath: /session-secret
+            - mountPath: "/session-secret"
               name: bot-session
               readOnly: true
-            - mountPath: /session
+            - mountPath: "/session"
               name: session-data
           containers:
           - env:
             - name: APP_ENV
               value: prod
             - name: PYTHONUNBUFFERED
-              value: "1"
+              value: '1'
             - name: SESSION_NAME
-              value: /app/session/prod_user
+              value: "/app/session/prod_user"
             - name: PROXY_DOWNLOADER_TIMEOUT
-              value: "120"
+              value: '120'
             - name: PROXY_AUTO_JOIN_SPONSORS
-              value: "true"
+              value: 'true'
             - name: PROXY_DEBUG_LOG
-              value: /app/logs/proxy_bot_downloader.log
+              value: "/app/logs/proxy_bot_downloader.log"
             - name: SEND_CONTENT_TIMEOUT
-              value: "180"
+              value: '180'
             envFrom:
             - secretRef:
                 name: bot-env
@@ -85,22 +84,23 @@ common-app:
             name: bot
             resources:
               limits:
-                cpu: "1"
-                memory: 1Gi
+                cpu: '1'
+                memory: 2Gi
               requests:
                 cpu: 100m
                 memory: 256Mi
             volumeMounts:
-            - mountPath: /app/session
+            - mountPath: "/app/session"
               name: session-data
-            - mountPath: /app/logs
+            - mountPath: "/app/logs"
               name: logs
-            - mountPath: /app/downloads
+            - mountPath: "/app/downloads"
               name: downloads
-            - mountPath: /app/content
+            - mountPath: "/app/content"
               name: content
           imagePullSecrets:
           - name: harbor-pull-secret
+          terminationGracePeriodSeconds: 60
           volumes:
           - name: bot-session
             secret:
@@ -115,8 +115,7 @@ common-app:
             name: downloads
           - emptyDir: {}
             name: content
-    ---
-    apiVersion: external-secrets.io/v1
+  - apiVersion: external-secrets.io/v1
     kind: ExternalSecret
     metadata:
       name: bot-env
@@ -150,8 +149,7 @@ common-app:
       target:
         creationPolicy: Owner
         name: bot-env
-    ---
-    apiVersion: external-secrets.io/v1
+  - apiVersion: external-secrets.io/v1
     kind: ExternalSecret
     metadata:
       name: bot-session
@@ -171,10 +169,9 @@ common-app:
         name: bot-session
         template:
           data:
-            prod_user.session: '{{ .prod_user_session_b64 | b64dec }}'
+            prod_user.session: "{{ .prod_user_session_b64 | b64dec }}"
           engineVersion: v2
-    ---
-    apiVersion: external-secrets.io/v1
+  - apiVersion: external-secrets.io/v1
     kind: ExternalSecret
     metadata:
       name: harbor-pull-secret
@@ -198,6 +195,9 @@ common-app:
         name: harbor-pull-secret
         template:
           data:
-            .dockerconfigjson: |
-              {"auths":{"harbor.api-api-api.com":{"username":"{{ .username }}","password":"{{ .password }}","auth":"{{ printf "%s:%s" .username .password | b64enc }}"}}}
+            ".dockerconfigjson": '{"auths":{"harbor.api-api-api.com":{"username":"{{
+              .username }}","password":"{{ .password }}","auth":"{{ printf "%s:%s"
+              .username .password | b64enc }}"}}}
+
+'
           type: kubernetes.io/dockerconfigjson

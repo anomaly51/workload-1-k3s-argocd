@@ -1,8 +1,10 @@
+---
 apiVersion: v2
 name: architect-business-bot
 version: 0.1.0
 type: application
 dependencies:
-- name: common-app
-  version: 0.2.0
-  repository: file://../../charts/common-app
+- name: app
+  version: 0.4.3
+  repository: oci://harbor.api-api-api.com/helm-charts
+  alias: app
