@@ -12,6 +12,8 @@ app:
     tag: sha-fedfdb71c0cd
   registryPullSecret:
     enabled: true
+  podAnnotations:
+    shisha-guid.io/restarted-at: "2026-06-05T19:43:00Z"
   selectorLabels:
     app: backend
   ports:
