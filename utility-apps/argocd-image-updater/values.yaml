@@ -31,13 +31,36 @@ argocd-image-updater:
     annotations:
       external-dns.alpha.kubernetes.io/hostname: argocd-workload-1.api-api-api.com
       external-dns.alpha.kubernetes.io/target: bfaa4824-dabf-4534-8b2a-0cfa730ec2f1.cfargotunnel.com
-      traefik.ingress.kubernetes.io/router.priority: "1000"
+      traefik.ingress.kubernetes.io/router.priority: "1100"
     tls:
       - secretName: argocd-api-tls-secret
         hosts:
           - argocd-workload-1.api-api-api.com
 
   extraObjects:
+    - apiVersion: traefik.io/v1alpha1
+      kind: IngressRoute
+      metadata:
+        name: argocd-image-updater-webhook
+        namespace: argocd
+      spec:
+        entryPoints:
+          - websecure
+        routes:
+          - kind: Rule
+            match: Host(`argocd-workload-1.api-api-api.com`) && PathPrefix(`/webhook`)
+            priority: 1100
+            services:
+              - name: argocd-image-updater
+                port: 8080
+          - kind: Rule
+            match: Host(`argocd-workload-1.api-api-api.com`) && PathPrefix(`/healthz`)
+            priority: 1100
+            services:
+              - name: argocd-image-updater
+                port: 8080
+        tls:
+          secretName: argocd-api-tls-secret
     - apiVersion: external-secrets.io/v1
       kind: ExternalSecret
       metadata:
