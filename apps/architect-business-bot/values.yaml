@@ -1,85 +1,74 @@
----
 app:
   name: architect-business-bot
   resourceName: architect-business-bot
   labels:
     app.kubernetes.io/part-of: workload-1
-
   namespace:
     create: true
     name: architect-business-bot
     labels:
       app.kubernetes.io/part-of: workload-1
-
   image:
     repository: harbor.api-api-api.com/architect-business-bot/bot
-    tag: main-51-8db91202e65591f937b200e478817e3889343ea6
-
+    tag: sha-2c8eddd77616
   registryPullSecret:
     enabled: true
-
   containerName: bot
   selectorLabels:
     app.kubernetes.io/name: architect-business-bot
   podLabels:
     app.kubernetes.io/part-of: workload-1
-
   ports:
-    - name: http
-      containerPort: 8080
-
+  - name: http
+    containerPort: 8080
   service:
     enabled: true
     port: 80
     targetPort: http
-
   envList:
-    - name: APP_VERSION
-      value: main-51-8db91202e65591f937b200e478817e3889343ea6
-    - name: PUBLIC_WEBHOOK_URL
-      value: https://architect-business-bot.api-api-api.com
-    - name: OWNER_TELEGRAM_ID
-      value: "794723616"
-    - name: APP_HOST
-      value: 0.0.0.0
-    - name: APP_PORT
-      value: "8080"
-    - name: DB_PATH
-      value: /app/data/architect.db
-    - name: DEEPSEEK_BASE_URL
-      value: https://openrouter.ai/api/v1
-    - name: DEEPSEEK_MODEL
-      value: deepseek/deepseek-v3.2
-    - name: DEEPSEEK_TIMEOUT_SECONDS
-      value: "45"
-    - name: DEEPSEEK_TEMPERATURE
-      value: "0.9"
-    - name: DEEPSEEK_MAX_TOKENS
-      value: "220"
-    - name: AUTO_PAUSE_AFTER_OWNER_MESSAGE_SECONDS
-      value: "900"
-    - name: MAX_HISTORY_MESSAGES
-      value: "7"
-    - name: DAILY_SUMMARY_ENABLED
-      value: "true"
-    - name: DAILY_SUMMARY_LOOKBACK_HOURS
-      value: "24"
-    - name: DAILY_SUMMARY_TZ
-      value: Europe/Kyiv
-    - name: DAILY_SUMMARY_TIME
-      value: "13:30"
-
+  - name: APP_VERSION
+    value: main-51-8db91202e65591f937b200e478817e3889343ea6
+  - name: PUBLIC_WEBHOOK_URL
+    value: https://architect-business-bot.api-api-api.com
+  - name: OWNER_TELEGRAM_ID
+    value: "794723616"
+  - name: APP_HOST
+    value: 0.0.0.0
+  - name: APP_PORT
+    value: "8080"
+  - name: DB_PATH
+    value: /app/data/architect.db
+  - name: DEEPSEEK_BASE_URL
+    value: https://openrouter.ai/api/v1
+  - name: DEEPSEEK_MODEL
+    value: deepseek/deepseek-v3.2
+  - name: DEEPSEEK_TIMEOUT_SECONDS
+    value: "45"
+  - name: DEEPSEEK_TEMPERATURE
+    value: "0.9"
+  - name: DEEPSEEK_MAX_TOKENS
+    value: "220"
+  - name: AUTO_PAUSE_AFTER_OWNER_MESSAGE_SECONDS
+    value: "900"
+  - name: MAX_HISTORY_MESSAGES
+    value: "7"
+  - name: DAILY_SUMMARY_ENABLED
+    value: "true"
+  - name: DAILY_SUMMARY_LOOKBACK_HOURS
+    value: "24"
+  - name: DAILY_SUMMARY_TZ
+    value: Europe/Kyiv
+  - name: DAILY_SUMMARY_TIME
+    value: "13:30"
   envFrom:
-    - secretRef:
-        name: architect-business-bot-env
-
+  - secretRef:
+      name: architect-business-bot-env
   lifecycle:
     postStart:
       exec:
         command:
-          - python
-          - set_webhook.py
-
+        - python
+        - set_webhook.py
   livenessProbe:
     httpGet:
       path: /health
@@ -87,7 +76,6 @@ app:
     initialDelaySeconds: 15
     periodSeconds: 20
     timeoutSeconds: 2
-
   readinessProbe:
     httpGet:
       path: /health
@@ -96,14 +84,12 @@ app:
     periodSeconds: 2
     timeoutSeconds: 1
     failureThreshold: 3
-
   resources:
     limits:
       memory: 512Mi
     requests:
       cpu: 100m
       memory: 128Mi
-
   persistence:
     enabled: true
     name: data
@@ -112,41 +98,39 @@ app:
     size: 1Gi
     storageClassName: nfs-client
     accessModes:
-      - ReadWriteOnce
+    - ReadWriteOnce
     annotations:
       argocd.argoproj.io/sync-options: Delete=false,Prune=false
       helm.sh/resource-policy: keep
-
   externalSecrets:
-    - name: architect-business-bot-env
-      refreshInterval: 5m
-      deletionPolicy: Retain
-      data:
-        - secretKey: BOT_TOKEN
-          remoteRef:
-            conversionStrategy: Default
-            decodingStrategy: None
-            key: workload-1/architect-business-bot
-            metadataPolicy: None
-            nullBytePolicy: Ignore
-            property: bot_token
-        - secretKey: DEEPSEEK_API_KEY
-          remoteRef:
-            conversionStrategy: Default
-            decodingStrategy: None
-            key: workload-1/architect-business-bot
-            metadataPolicy: None
-            nullBytePolicy: Ignore
-            property: deepseek_api_key
-        - secretKey: WEBHOOK_SECRET
-          remoteRef:
-            conversionStrategy: Default
-            decodingStrategy: None
-            key: workload-1/architect-business-bot
-            metadataPolicy: None
-            nullBytePolicy: Ignore
-            property: webhook_secret
-
+  - name: architect-business-bot-env
+    refreshInterval: 5m
+    deletionPolicy: Retain
+    data:
+    - secretKey: BOT_TOKEN
+      remoteRef:
+        conversionStrategy: Default
+        decodingStrategy: None
+        key: workload-1/architect-business-bot
+        metadataPolicy: None
+        nullBytePolicy: Ignore
+        property: bot_token
+    - secretKey: DEEPSEEK_API_KEY
+      remoteRef:
+        conversionStrategy: Default
+        decodingStrategy: None
+        key: workload-1/architect-business-bot
+        metadataPolicy: None
+        nullBytePolicy: Ignore
+        property: deepseek_api_key
+    - secretKey: WEBHOOK_SECRET
+      remoteRef:
+        conversionStrategy: Default
+        decodingStrategy: None
+        key: workload-1/architect-business-bot
+        metadataPolicy: None
+        nullBytePolicy: Ignore
+        property: webhook_secret
   ingress:
     enabled: true
     host: architect-business-bot.api-api-api.com
