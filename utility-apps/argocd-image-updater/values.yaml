@@ -8,12 +8,34 @@ argocd-image-updater:
     git.user: github-actions[bot]
     git.email: 41898282+github-actions[bot]@users.noreply.github.com
     log.level: info
+    webhook.enable: true
+    webhook.port: 8082
+    webhook.ratelimit-allowed: 120
+    disable-tls: true
     registries:
       - name: Harbor
         prefix: harbor.api-api-api.com
         api_url: https://harbor.api-api-api.com
         ping: true
         credentials: pullsecret:argocd/argocd-image-updater-harbor
+
+  service:
+    enabled: true
+
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    hostname: argocd-image-updater.api-api-api.com
+    path: /webhook
+    pathType: Prefix
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-production
+      external-dns.alpha.kubernetes.io/hostname: argocd-image-updater.api-api-api.com
+      external-dns.alpha.kubernetes.io/target: bfaa4824-dabf-4534-8b2a-0cfa730ec2f1.cfargotunnel.com
+    tls:
+      - secretName: argocd-image-updater-webhook-tls
+        hosts:
+          - argocd-image-updater.api-api-api.com
 
   extraObjects:
     - apiVersion: external-secrets.io/v1
@@ -44,6 +66,25 @@ argocd-image-updater:
             remoteRef:
               key: shared/harbor
               property: password
+    - apiVersion: external-secrets.io/v1
+      kind: ExternalSecret
+      metadata:
+        name: argocd-image-updater-webhook-secret
+        namespace: argocd
+      spec:
+        refreshInterval: 5m
+        secretStoreRef:
+          name: vault-backend
+          kind: ClusterSecretStore
+        target:
+          name: argocd-image-updater-secret
+          creationPolicy: Owner
+          deletionPolicy: Retain
+        data:
+          - secretKey: webhook.harbor-secret
+            remoteRef:
+              key: shared/argocd-image-updater
+              property: harbor_webhook_secret
     - apiVersion: external-secrets.io/v1
       kind: ExternalSecret
       metadata:
