@@ -1,27 +1,21 @@
----
 app:
   namespace:
     create: true
     name: shisha-frontend
     annotations:
       argocd.argoproj.io/sync-options: Delete=false,Prune=false
-
   image:
     repository: harbor.api-api-api.com/shisha/frontend
-    tag: main-86-997fdfb26e261ecdd7cec344e5d8fe0028d88dab
-
+    tag: sha-74e0df1149e0
   selectorLabels:
     app: shisha-frontend
-
   ports:
-    - name: http
-      containerPort: 80
-
+  - name: http
+    containerPort: 80
   service:
     enabled: true
     port: 80
     targetPort: 80
-
   ingress:
     enabled: true
     host: shisha-guid.api-api-api.com
