@@ -10,7 +10,7 @@ app:
       app.kubernetes.io/part-of: workload-1
   image:
     repository: harbor.api-api-api.com/architect-business-bot/bot
-    tag: sha-d1728f2b661b
+    tag: sha-cf2699259c96
   registryPullSecret:
     enabled: true
   containerName: bot
