@@ -6,7 +6,7 @@ app:
       argocd.argoproj.io/sync-options: Delete=false,Prune=false
   image:
     repository: harbor.api-api-api.com/shisha/frontend
-    tag: sha-be3a05ffee8b
+    tag: sha-c5a5210d1530
   registryPullSecret:
     enabled: true
   selectorLabels:
