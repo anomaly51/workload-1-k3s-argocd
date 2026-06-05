@@ -211,8 +211,6 @@ common-app:
     metadata:
       annotations:
         cert-manager.io/cluster-issuer: letsencrypt-production
-        external-dns.alpha.kubernetes.io/hostname: obsidian-livesync.api-api-api.com
-        external-dns.alpha.kubernetes.io/target: bfaa4824-dabf-4534-8b2a-0cfa730ec2f1.cfargotunnel.com
       name: obsidian-livesync-couchdb
       namespace: obsidian-livesync
     spec:

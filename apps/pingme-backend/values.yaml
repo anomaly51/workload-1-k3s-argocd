@@ -356,8 +356,6 @@ common-app:
     metadata:
       annotations:
         cert-manager.io/cluster-issuer: letsencrypt-production
-        external-dns.alpha.kubernetes.io/hostname: pingme-backend.api-api-api.com
-        external-dns.alpha.kubernetes.io/target: bfaa4824-dabf-4534-8b2a-0cfa730ec2f1.cfargotunnel.com
       name: pingme-backend
       namespace: pingme-backend
     spec:

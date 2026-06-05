@@ -6,7 +6,15 @@ metadata:
   namespace: {{ include "common-app.namespace" . }}
   labels:
     {{- include "common-app.labels" . | nindent 4 }}
-  {{- with .Values.ingress.annotations }}
+  {{- $annotations := dict }}
+  {{- with .Values.ingress.host }}
+  {{- $_ := set $annotations "external-dns.alpha.kubernetes.io/hostname" . }}
+  {{- end }}
+  {{- with .Values.cluster.externalDns.target }}
+  {{- $_ := set $annotations "external-dns.alpha.kubernetes.io/target" . }}
+  {{- end }}
+  {{- $annotations = mergeOverwrite $annotations .Values.ingress.annotations }}
+  {{- with $annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}

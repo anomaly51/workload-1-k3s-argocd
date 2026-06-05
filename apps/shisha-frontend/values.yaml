@@ -79,8 +79,6 @@ common-app:
     metadata:
       annotations:
         cert-manager.io/cluster-issuer: letsencrypt-production
-        external-dns.alpha.kubernetes.io/hostname: shisha-guid.api-api-api.com
-        external-dns.alpha.kubernetes.io/target: bfaa4824-dabf-4534-8b2a-0cfa730ec2f1.cfargotunnel.com
       name: shisha-frontend
       namespace: shisha-frontend
     spec:

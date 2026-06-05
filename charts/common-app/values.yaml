@@ -1,6 +1,10 @@
 nameOverride: ""
 fullnameOverride: ""
 
+cluster:
+  externalDns:
+    target: ""
+
 namespace:
   create: true
   name: ""
