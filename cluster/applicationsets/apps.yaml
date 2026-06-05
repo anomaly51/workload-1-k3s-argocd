@@ -32,13 +32,13 @@ spec:
         helm:
           releaseName: "{{ .name }}"
           valuesObject:
-            common-app:
+            app:
               cluster:
                 externalDns:
                   target: bfaa4824-dabf-4534-8b2a-0cfa730ec2f1.cfargotunnel.com
       destination:
         server: https://kubernetes.default.svc
-        namespace: '{{ if eq .name "arc-config" }}arc-systems{{ else if eq .name "argo-workflows" }}argo{{ else if eq .name "grafana-config" }}grafana{{ else }}{{ .name }}{{ end }}'
+        namespace: '{{ if eq .name "arc-config" }}arc-systems{{ else if eq .name "argo-workflows" }}argo{{ else }}{{ .name }}{{ end }}'
       ignoreDifferences:
       - group: external-secrets.io
         kind: ExternalSecret

@@ -1,8 +1,0 @@
-apiVersion: v2
-name: architect-business-bot-logs
-version: 0.1.0
-type: application
-dependencies:
-- name: alloy
-  version: 1.8.1
-  repository: https://grafana.github.io/helm-charts
