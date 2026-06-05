@@ -10,7 +10,7 @@ app:
       app.kubernetes.io/part-of: workload-1
   image:
     repository: harbor.api-api-api.com/bot-motivation/motivator-bot
-    tag: sha-f69ea96e272a
+    tag: sha-fc7bf54a93d5
   registryPullSecret:
     enabled: true
   containerName: motivator-bot
