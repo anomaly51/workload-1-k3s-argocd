@@ -1,58 +1,48 @@
----
 app:
   name: bot-motivation
   resourceName: bot-motivation
   labels:
     app.kubernetes.io/part-of: workload-1
-
   namespace:
     create: true
     name: bot-motivation
     labels:
       app.kubernetes.io/part-of: workload-1
-
   image:
     repository: harbor.api-api-api.com/bot-motivation/motivator-bot
-    tag: main-6-7f5fd085c1dd2206a9c73aa4cb0e40824fa47c8d
-
+    tag: sha-ddc450594e96
   registryPullSecret:
     enabled: true
-
   containerName: motivator-bot
   selectorLabels:
     app.kubernetes.io/name: bot-motivation
   podLabels:
     app.kubernetes.io/part-of: workload-1
-
   ports:
-    - name: http
-      containerPort: 8080
-
+  - name: http
+    containerPort: 8080
   service:
     enabled: true
     port: 80
     targetPort: http
-
   envList:
-    - name: APP_VERSION
-      value: main-6-7f5fd085c1dd2206a9c73aa4cb0e40824fa47c8d
-    - name: PYTHONUNBUFFERED
-      value: "1"
-    - name: API_HOST
-      value: 0.0.0.0
-    - name: API_PORT
-      value: "8080"
-    - name: TMA_BASE_URL
-      value: https://pets-void.api-api-api.com
-    - name: BOT_DB_PATH
-      value: /app/data/bot_data.db
-    - name: TIKTOK_COOKIES_PATH
-      value: /app/cookies.txt
-
+  - name: APP_VERSION
+    value: main-6-7f5fd085c1dd2206a9c73aa4cb0e40824fa47c8d
+  - name: PYTHONUNBUFFERED
+    value: "1"
+  - name: API_HOST
+    value: 0.0.0.0
+  - name: API_PORT
+    value: "8080"
+  - name: TMA_BASE_URL
+    value: https://pets-void.api-api-api.com
+  - name: BOT_DB_PATH
+    value: /app/data/bot_data.db
+  - name: TIKTOK_COOKIES_PATH
+    value: /app/cookies.txt
   envFrom:
-    - secretRef:
-        name: bot-motivation-env
-
+  - secretRef:
+      name: bot-motivation-env
   livenessProbe:
     httpGet:
       path: /health
@@ -60,7 +50,6 @@ app:
     initialDelaySeconds: 20
     periodSeconds: 30
     timeoutSeconds: 3
-
   readinessProbe:
     httpGet:
       path: /health
@@ -69,14 +58,12 @@ app:
     periodSeconds: 5
     timeoutSeconds: 2
     failureThreshold: 6
-
   resources:
     limits:
       memory: 512Mi
     requests:
       cpu: 100m
       memory: 128Mi
-
   persistence:
     enabled: true
     name: data
@@ -85,104 +72,100 @@ app:
     size: 1Gi
     storageClassName: nfs-client
     accessModes:
-      - ReadWriteOnce
+    - ReadWriteOnce
     annotations:
       argocd.argoproj.io/sync-options: Delete=false,Prune=false
       helm.sh/resource-policy: keep
-
   extraVolumeMounts:
-    - name: cookies
-      mountPath: /app/cookies.txt
-      readOnly: true
-      subPath: cookies.txt
-
+  - name: cookies
+    mountPath: /app/cookies.txt
+    readOnly: true
+    subPath: cookies.txt
   extraVolumes:
-    - name: cookies
-      secret:
-        secretName: bot-motivation-cookies
-
+  - name: cookies
+    secret:
+      secretName: bot-motivation-cookies
   externalSecrets:
-    - name: bot-motivation-cookies
-      refreshInterval: 5m
-      deletionPolicy: Retain
-      data:
-        - secretKey: cookies.txt
-          remoteRef:
-            conversionStrategy: Default
-            decodingStrategy: None
-            key: workload-1/bot-motivation
-            metadataPolicy: None
-            nullBytePolicy: Ignore
-            property: cookies_txt
-    - name: bot-motivation-env
-      refreshInterval: 5m
-      deletionPolicy: Retain
-      data:
-        - secretKey: BOT_TOKEN
-          remoteRef:
-            conversionStrategy: Default
-            decodingStrategy: None
-            key: workload-1/bot-motivation
-            metadataPolicy: None
-            nullBytePolicy: Ignore
-            property: bot_token
-        - secretKey: OPENROUTER_API_KEY
-          remoteRef:
-            conversionStrategy: Default
-            decodingStrategy: None
-            key: workload-1/bot-motivation
-            metadataPolicy: None
-            nullBytePolicy: Ignore
-            property: openrouter_api_key
-        - secretKey: RAPID_API_KEY
-          remoteRef:
-            conversionStrategy: Default
-            decodingStrategy: None
-            key: workload-1/bot-motivation
-            metadataPolicy: None
-            nullBytePolicy: Ignore
-            property: rapid_api_key
-        - secretKey: RAPID_API_HOST
-          remoteRef:
-            conversionStrategy: Default
-            decodingStrategy: None
-            key: workload-1/bot-motivation
-            metadataPolicy: None
-            nullBytePolicy: Ignore
-            property: rapid_api_host
-        - secretKey: RAPID_API_URL
-          remoteRef:
-            conversionStrategy: Default
-            decodingStrategy: None
-            key: workload-1/bot-motivation
-            metadataPolicy: None
-            nullBytePolicy: Ignore
-            property: rapid_api_url
-        - secretKey: GROUP_CHAT_ID
-          remoteRef:
-            conversionStrategy: Default
-            decodingStrategy: None
-            key: workload-1/bot-motivation
-            metadataPolicy: None
-            nullBytePolicy: Ignore
-            property: group_chat_id
-        - secretKey: ADMIN_ID
-          remoteRef:
-            conversionStrategy: Default
-            decodingStrategy: None
-            key: workload-1/bot-motivation
-            metadataPolicy: None
-            nullBytePolicy: Ignore
-            property: admin_id
-
+  - name: bot-motivation-cookies
+    refreshInterval: 5m
+    deletionPolicy: Retain
+    data:
+    - secretKey: cookies.txt
+      remoteRef:
+        conversionStrategy: Default
+        decodingStrategy: None
+        key: workload-1/bot-motivation
+        metadataPolicy: None
+        nullBytePolicy: Ignore
+        property: cookies_txt
+  - name: bot-motivation-env
+    refreshInterval: 5m
+    deletionPolicy: Retain
+    data:
+    - secretKey: BOT_TOKEN
+      remoteRef:
+        conversionStrategy: Default
+        decodingStrategy: None
+        key: workload-1/bot-motivation
+        metadataPolicy: None
+        nullBytePolicy: Ignore
+        property: bot_token
+    - secretKey: OPENROUTER_API_KEY
+      remoteRef:
+        conversionStrategy: Default
+        decodingStrategy: None
+        key: workload-1/bot-motivation
+        metadataPolicy: None
+        nullBytePolicy: Ignore
+        property: openrouter_api_key
+    - secretKey: RAPID_API_KEY
+      remoteRef:
+        conversionStrategy: Default
+        decodingStrategy: None
+        key: workload-1/bot-motivation
+        metadataPolicy: None
+        nullBytePolicy: Ignore
+        property: rapid_api_key
+    - secretKey: RAPID_API_HOST
+      remoteRef:
+        conversionStrategy: Default
+        decodingStrategy: None
+        key: workload-1/bot-motivation
+        metadataPolicy: None
+        nullBytePolicy: Ignore
+        property: rapid_api_host
+    - secretKey: RAPID_API_URL
+      remoteRef:
+        conversionStrategy: Default
+        decodingStrategy: None
+        key: workload-1/bot-motivation
+        metadataPolicy: None
+        nullBytePolicy: Ignore
+        property: rapid_api_url
+    - secretKey: GROUP_CHAT_ID
+      remoteRef:
+        conversionStrategy: Default
+        decodingStrategy: None
+        key: workload-1/bot-motivation
+        metadataPolicy: None
+        nullBytePolicy: Ignore
+        property: group_chat_id
+    - secretKey: ADMIN_ID
+      remoteRef:
+        conversionStrategy: Default
+        decodingStrategy: None
+        key: workload-1/bot-motivation
+        metadataPolicy: None
+        nullBytePolicy: Ignore
+        property: admin_id
   ingress:
     enabled: true
     host: pets-void.api-api-api.com
     tlsSecretName: bot-motivation-tls
     paths:
-      - path: /tma
-        pathType: Prefix
-      - path: /api
-        pathType: Prefix
-      - path: /health
-        pathType: Exact
+    - path: /tma
+      pathType: Prefix
+    - path: /api
+      pathType: Prefix
+    - path: /health
+      pathType: Exact
