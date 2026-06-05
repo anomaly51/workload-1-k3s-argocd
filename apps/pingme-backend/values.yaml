@@ -61,11 +61,6 @@ app:
       selector:
         matchLabels:
           app.kubernetes.io/name: pingme-backend
-      strategy:
-        rollingUpdate:
-          maxSurge: 1
-          maxUnavailable: 1
-        type: RollingUpdate
       template:
         metadata:
           labels:
@@ -119,8 +114,6 @@ app:
               name: google-services
               readOnly: true
               subPath: google_services.json
-          imagePullSecrets:
-          - name: harbor-pull-secret
           initContainers:
           - command:
             - sh
@@ -228,45 +221,6 @@ app:
               storage: 5Gi
           storageClassName: nfs-client
           volumeMode: Filesystem
-  - apiVersion: external-secrets.io/v1
-    kind: ExternalSecret
-    metadata:
-      name: harbor-pull-secret
-      namespace: pingme-backend
-    spec:
-      data:
-      - remoteRef:
-          conversionStrategy: Default
-          decodingStrategy: None
-          key: shared/harbor
-          metadataPolicy: None
-          nullBytePolicy: Ignore
-          property: username
-        secretKey: username
-      - remoteRef:
-          conversionStrategy: Default
-          decodingStrategy: None
-          key: shared/harbor
-          metadataPolicy: None
-          nullBytePolicy: Ignore
-          property: password
-        secretKey: password
-      refreshInterval: 1h
-      secretStoreRef:
-        kind: ClusterSecretStore
-        name: vault-backend
-      target:
-        creationPolicy: Owner
-        deletionPolicy: Retain
-        name: harbor-pull-secret
-        template:
-          data:
-            ".dockerconfigjson": '{"auths":{"harbor.api-api-api.com":{"username":"{{
-              .username }}","password":"{{ .password }}","auth":"{{ printf "%s:%s"
-              .username .password | b64enc }}"}}}
-
-'
-          type: kubernetes.io/dockerconfigjson
   - apiVersion: external-secrets.io/v1
     kind: ExternalSecret
     metadata:

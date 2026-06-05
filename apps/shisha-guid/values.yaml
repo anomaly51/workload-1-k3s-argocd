@@ -1,7 +1,7 @@
 ---
 app:
-  nameOverride: backend
-  fullnameOverride: backend
+  name: backend
+  resourceName: backend
 
   namespace:
     create: true
@@ -24,9 +24,6 @@ app:
     enabled: true
     port: 80
     targetPort: 8000
-
-  registryPullSecret:
-    enabled: true
 
   env:
     MINIO_ENDPOINT: minio.shisha-guid.svc.cluster.local:9000

@@ -184,8 +184,6 @@ app:
             volumeMounts:
             - mountPath: "/code/static/uploads"
               name: uploads
-          imagePullSecrets:
-          - name: harbor-pull-secret
           initContainers:
           - command:
             - sh
@@ -388,36 +386,6 @@ app:
       target:
         creationPolicy: Owner
         name: backend-secret
-  - apiVersion: external-secrets.io/v1
-    kind: ExternalSecret
-    metadata:
-      name: harbor-pull-secret
-      namespace: online-shop
-    spec:
-      data:
-      - remoteRef:
-          key: shared/harbor
-          property: username
-        secretKey: username
-      - remoteRef:
-          key: shared/harbor
-          property: password
-        secretKey: password
-      refreshInterval: 1h
-      secretStoreRef:
-        kind: ClusterSecretStore
-        name: vault-backend
-      target:
-        creationPolicy: Owner
-        name: harbor-pull-secret
-        template:
-          data:
-            ".dockerconfigjson": '{"auths":{"harbor.api-api-api.com":{"username":"{{
-              .username }}","password":"{{ .password }}","auth":"{{ printf "%s:%s"
-              .username .password | b64enc }}"}}}
-
-'
-          type: kubernetes.io/dockerconfigjson
   - apiVersion: external-secrets.io/v1
     kind: ExternalSecret
     metadata:

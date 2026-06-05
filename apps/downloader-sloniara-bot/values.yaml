@@ -1,7 +1,7 @@
 ---
 app:
-  nameOverride: downloader-sloniara-bot
-  fullnameOverride: bot
+  name: downloader-sloniara-bot
+  resourceName: bot
 
   namespace:
     create: true
@@ -15,17 +15,10 @@ app:
   selectorLabels:
     app: downloader-sloniara-bot
 
-  deployment:
-    strategy:
-      type: Recreate
-
   terminationGracePeriodSeconds: 60
 
   service:
     enabled: false
-
-  registryPullSecret:
-    enabled: true
 
   envList:
     - name: APP_ENV

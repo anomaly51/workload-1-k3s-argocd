@@ -1,7 +1,7 @@
 ---
 app:
-  nameOverride: online-shop-frontend
-  fullnameOverride: online-shop-frontend
+  name: online-shop-frontend
+  resourceName: online-shop-frontend
 
   namespace:
     create: true
@@ -22,9 +22,6 @@ app:
     enabled: true
     port: 80
     targetPort: 80
-
-  registryPullSecret:
-    enabled: true
 
   ingress:
     enabled: true

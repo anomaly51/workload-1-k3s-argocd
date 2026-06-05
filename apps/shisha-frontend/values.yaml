@@ -22,9 +22,6 @@ app:
     port: 80
     targetPort: 80
 
-  registryPullSecret:
-    enabled: true
-
   ingress:
     enabled: true
     host: shisha-guid.api-api-api.com
