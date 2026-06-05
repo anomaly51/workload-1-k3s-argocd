@@ -9,7 +9,7 @@ app:
       argocd.argoproj.io/sync-options: Delete=false,Prune=false
   image:
     repository: harbor.api-api-api.com/shisha/backend
-    tag: sha-4eab9fdc3ddd
+    tag: sha-61c818d63352
   registryPullSecret:
     enabled: true
   podAnnotations:
