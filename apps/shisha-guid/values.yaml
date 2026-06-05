@@ -10,6 +10,8 @@ app:
   image:
     repository: harbor.api-api-api.com/shisha/backend
     tag: sha-fedfdb71c0cd
+  registryPullSecret:
+    enabled: true
   selectorLabels:
     app: backend
   ports:
