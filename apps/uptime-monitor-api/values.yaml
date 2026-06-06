@@ -125,6 +125,8 @@ app:
           labels:
             app: uptime-monitor-api
         spec:
+          imagePullSecrets:
+          - name: harbor-pull-secret
           initContainers:
           - name: wait-for-dependencies
             image: busybox:1.36
@@ -213,6 +215,8 @@ app:
           labels:
             app: uptime-monitor-worker
         spec:
+          imagePullSecrets:
+          - name: harbor-pull-secret
           initContainers:
           - name: wait-for-dependencies
             image: busybox:1.36
@@ -249,6 +253,8 @@ app:
           labels:
             app: uptime-monitor-scheduler
         spec:
+          imagePullSecrets:
+          - name: harbor-pull-secret
           initContainers:
           - name: wait-for-dependencies
             image: busybox:1.36
@@ -285,6 +291,8 @@ app:
           labels:
             app: uptime-monitor-bot
         spec:
+          imagePullSecrets:
+          - name: harbor-pull-secret
           initContainers:
           - name: wait-for-postgres
             image: busybox:1.36
