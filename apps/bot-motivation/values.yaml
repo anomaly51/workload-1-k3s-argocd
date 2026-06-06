@@ -27,7 +27,7 @@ app:
     targetPort: http
   envList:
   - name: APP_VERSION
-    value: main-6-7f5fd085c1dd2206a9c73aa4cb0e40824fa47c8d
+    value: sha-ccc75687e386
   - name: PYTHONUNBUFFERED
     value: "1"
   - name: API_HOST

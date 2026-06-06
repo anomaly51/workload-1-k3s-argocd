@@ -27,7 +27,7 @@ app:
     targetPort: http
   envList:
   - name: APP_VERSION
-    value: main-51-8db91202e65591f937b200e478817e3889343ea6
+    value: sha-594eb1f2fcaa
   - name: PUBLIC_WEBHOOK_URL
     value: https://architect-business-bot.api-api-api.com
   - name: OWNER_TELEGRAM_ID

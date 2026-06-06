@@ -7,7 +7,7 @@ app:
   images:
     backend:
       repository: harbor.api-api-api.com/pingme/backend
-      tag: main-27-3b3ffe14347fb168ec203d9287867135e329aa20
+      tag: sha-cfc296377ed0
   objects:
   - apiVersion: v1
     kind: Namespace
@@ -74,7 +74,7 @@ app:
           containers:
           - env:
             - name: APP_VERSION
-              value: main-27-3b3ffe14347fb168ec203d9287867135e329aa20
+              value: sha-cfc296377ed0
             - name: APP_BASE_URL
               value: https://pingme-backend.api-api-api.com
             - name: ALGORITHM
