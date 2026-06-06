@@ -186,6 +186,58 @@ argocd-image-updater:
     - apiVersion: argocd-image-updater.argoproj.io/v1alpha1
       kind: ImageUpdater
       metadata:
+        name: uptime-monitor-frontend
+        namespace: argocd
+      spec:
+        writeBackConfig:
+          method: git:secret:argocd/argocd-image-updater-git-creds
+          gitConfig:
+            repository: https://github.com/anomaly51/workload-1-k3s-argocd.git
+            branch: main
+            writeBackTarget: helmvalues:./values.yaml
+        applicationRefs:
+          - namePattern: uptime-monitor-frontend
+            images:
+              - alias: app
+                imageName: harbor.api-api-api.com/uptime-monitor/frontend
+                commonUpdateSettings:
+                  updateStrategy: newest-build
+                  allowTags: regexp:^sha-[0-9a-f]{12}$
+                  platforms:
+                    - linux/amd64
+                manifestTargets:
+                  helm:
+                    name: app.image.repository
+                    tag: app.image.tag
+    - apiVersion: argocd-image-updater.argoproj.io/v1alpha1
+      kind: ImageUpdater
+      metadata:
+        name: uptime-monitor-api
+        namespace: argocd
+      spec:
+        writeBackConfig:
+          method: git:secret:argocd/argocd-image-updater-git-creds
+          gitConfig:
+            repository: https://github.com/anomaly51/workload-1-k3s-argocd.git
+            branch: main
+            writeBackTarget: helmvalues:./values.yaml
+        applicationRefs:
+          - namePattern: uptime-monitor-api
+            images:
+              - alias: api
+                imageName: harbor.api-api-api.com/uptime-monitor/api
+                commonUpdateSettings:
+                  updateStrategy: newest-build
+                  allowTags: regexp:^sha-[0-9a-f]{12}$
+                  platforms:
+                    - linux/amd64
+                manifestTargets:
+                  helm:
+                    name: app.images.api.repository
+                    tag: app.images.api.tag
+    - apiVersion: argocd-image-updater.argoproj.io/v1alpha1
+      kind: ImageUpdater
+      metadata:
         name: online-shop-frontend
         namespace: argocd
       spec:

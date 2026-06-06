@@ -1,0 +1,38 @@
+app:
+  name: uptime-monitor-frontend
+  resourceName: uptime-monitor-frontend
+  namespace:
+    create: true
+    name: uptime-monitor-frontend
+    annotations:
+      argocd.argoproj.io/sync-options: Delete=false,Prune=false
+  image:
+    repository: harbor.api-api-api.com/uptime-monitor/frontend
+    tag: sha-000000000000
+  registryPullSecret:
+    enabled: true
+  selectorLabels:
+    app: uptime-monitor-frontend
+  ports:
+  - name: http
+    containerPort: 80
+  service:
+    enabled: true
+    port: 80
+    targetPort: 80
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: 80
+    initialDelaySeconds: 5
+    periodSeconds: 10
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 80
+    initialDelaySeconds: 10
+    periodSeconds: 20
+  ingress:
+    enabled: true
+    host: uptime-monitor.api-api-api.com
+    tlsSecretName: uptime-monitor-frontend-tls

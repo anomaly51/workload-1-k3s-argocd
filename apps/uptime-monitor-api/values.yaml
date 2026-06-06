@@ -1,0 +1,360 @@
+app:
+  namespace:
+    create: true
+    name: uptime-monitor-api
+    annotations:
+      argocd.argoproj.io/sync-options: Delete=false,Prune=false
+  registryPullSecret:
+    enabled: true
+  images:
+    api:
+      repository: harbor.api-api-api.com/uptime-monitor/api
+      tag: sha-000000000000
+  externalSecrets:
+  - name: uptime-monitor-backend-secret
+    data:
+    - secretKey: JWT_SECRET
+      remoteRef:
+        key: workload-1/uptime-monitor-api
+        property: jwt_secret
+  - name: uptime-monitor-postgres-secret
+    targetName: postgres-secret
+    data:
+    - secretKey: password
+      remoteRef:
+        key: workload-1/uptime-monitor-postgres
+        property: password
+  - name: uptime-monitor-rabbitmq-secret
+    targetName: rabbitmq-secret
+    data:
+    - secretKey: username
+      remoteRef:
+        key: workload-1/uptime-monitor-rabbitmq
+        property: username
+    - secretKey: password
+      remoteRef:
+        key: workload-1/uptime-monitor-rabbitmq
+        property: password
+  addons:
+    postgres:
+      enabled: true
+      selectorLabels:
+        app: uptime-monitor-postgres
+      database: uptime
+      user: uptime
+      image:
+        repository: postgres
+        tag: 16-alpine
+      passwordSecret:
+        name: postgres-secret
+        key: password
+      persistence:
+        size: 5Gi
+  objects:
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: uptime-monitor-api
+      namespace: uptime-monitor-api
+      labels:
+        app: uptime-monitor-api
+    spec:
+      type: ClusterIP
+      selector:
+        app: uptime-monitor-api
+      ports:
+      - name: http
+        port: 80
+        targetPort: 8000
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: rabbitmq
+      namespace: uptime-monitor-api
+      labels:
+        app: uptime-monitor-rabbitmq
+    spec:
+      type: ClusterIP
+      selector:
+        app: uptime-monitor-rabbitmq
+      ports:
+      - name: amqp
+        port: 5672
+        targetPort: 5672
+      - name: management
+        port: 15672
+        targetPort: 15672
+  - apiVersion: networking.k8s.io/v1
+    kind: Ingress
+    metadata:
+      name: uptime-monitor-api
+      namespace: uptime-monitor-api
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt-production
+    spec:
+      ingressClassName: traefik
+      tls:
+      - hosts:
+        - uptime-monitor-api.api-api-api.com
+        secretName: uptime-monitor-api-tls
+      rules:
+      - host: uptime-monitor-api.api-api-api.com
+        http:
+          paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: uptime-monitor-api
+                port:
+                  number: 80
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: uptime-monitor-api
+      namespace: uptime-monitor-api
+      labels:
+        app: uptime-monitor-api
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app: uptime-monitor-api
+      template:
+        metadata:
+          labels:
+            app: uptime-monitor-api
+        spec:
+          initContainers:
+          - name: wait-for-dependencies
+            image: busybox:1.36
+            command:
+            - sh
+            - -c
+            - until nc -z postgres 5432 && nc -z rabbitmq 5672; do sleep 2; done
+          containers:
+          - name: api
+            image: __IMAGE_api__
+            imagePullPolicy: IfNotPresent
+            env: &uptime-monitor-env
+            - name: PROJECT_NAME
+              value: Uptime Monitor
+            - name: APP_VERSION
+              value: ""
+            - name: APP_BASE_URL
+              value: https://uptime-monitor-api.api-api-api.com
+            - name: CORS_ORIGINS
+              value: https://uptime-monitor.api-api-api.com
+            - name: JWT_ISSUER
+              value: uptime-monitor-api
+            - name: JWT_AUDIENCE
+              value: uptime-monitor-client
+            - name: ACCESS_TOKEN_EXPIRE_MINUTES
+              value: "1440"
+            - name: REFRESH_TOKEN_EXPIRE_DAYS
+              value: "14"
+            - name: CHECK_QUEUE_NAME
+              value: monitor_checks
+            - name: SCHEDULER_TICK_SECONDS
+              value: "30"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: password
+            - name: RABBITMQ_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-secret
+                  key: username
+            - name: RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-secret
+                  key: password
+            - name: DATABASE_URL
+              value: postgresql+asyncpg://uptime:$(POSTGRES_PASSWORD)@postgres:5432/uptime
+            - name: RABBITMQ_URL
+              value: amqp://$(RABBITMQ_USERNAME):$(RABBITMQ_PASSWORD)@rabbitmq:5672/
+            envFrom:
+            - secretRef:
+                name: uptime-monitor-backend-secret
+            ports:
+            - name: http
+              containerPort: 8000
+            readinessProbe:
+              httpGet:
+                path: /health
+                port: 8000
+              initialDelaySeconds: 15
+              periodSeconds: 10
+              timeoutSeconds: 3
+            livenessProbe:
+              httpGet:
+                path: /ready
+                port: 8000
+              initialDelaySeconds: 20
+              periodSeconds: 20
+              timeoutSeconds: 3
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: uptime-monitor-worker
+      namespace: uptime-monitor-api
+      labels:
+        app: uptime-monitor-worker
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app: uptime-monitor-worker
+      template:
+        metadata:
+          labels:
+            app: uptime-monitor-worker
+        spec:
+          initContainers:
+          - name: wait-for-dependencies
+            image: busybox:1.36
+            command:
+            - sh
+            - -c
+            - until nc -z postgres 5432 && nc -z rabbitmq 5672; do sleep 2; done
+          containers:
+          - name: worker
+            image: __IMAGE_api__
+            imagePullPolicy: IfNotPresent
+            command:
+            - python
+            - -m
+            - app.worker
+            env: *uptime-monitor-env
+            envFrom:
+            - secretRef:
+                name: uptime-monitor-backend-secret
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: uptime-monitor-scheduler
+      namespace: uptime-monitor-api
+      labels:
+        app: uptime-monitor-scheduler
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app: uptime-monitor-scheduler
+      template:
+        metadata:
+          labels:
+            app: uptime-monitor-scheduler
+        spec:
+          initContainers:
+          - name: wait-for-dependencies
+            image: busybox:1.36
+            command:
+            - sh
+            - -c
+            - until nc -z postgres 5432 && nc -z rabbitmq 5672; do sleep 2; done
+          containers:
+          - name: scheduler
+            image: __IMAGE_api__
+            imagePullPolicy: IfNotPresent
+            command:
+            - python
+            - -m
+            - app.scheduler
+            env: *uptime-monitor-env
+            envFrom:
+            - secretRef:
+                name: uptime-monitor-backend-secret
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: uptime-monitor-bot
+      namespace: uptime-monitor-api
+      labels:
+        app: uptime-monitor-bot
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app: uptime-monitor-bot
+      template:
+        metadata:
+          labels:
+            app: uptime-monitor-bot
+        spec:
+          initContainers:
+          - name: wait-for-postgres
+            image: busybox:1.36
+            command:
+            - sh
+            - -c
+            - until nc -z postgres 5432; do sleep 2; done
+          containers:
+          - name: bot
+            image: __IMAGE_api__
+            imagePullPolicy: IfNotPresent
+            command:
+            - python
+            - -m
+            - app.bot
+            env: *uptime-monitor-env
+            envFrom:
+            - secretRef:
+                name: uptime-monitor-backend-secret
+  - apiVersion: apps/v1
+    kind: StatefulSet
+    metadata:
+      name: rabbitmq
+      namespace: uptime-monitor-api
+      labels:
+        app: uptime-monitor-rabbitmq
+    spec:
+      replicas: 1
+      serviceName: rabbitmq
+      selector:
+        matchLabels:
+          app: uptime-monitor-rabbitmq
+      template:
+        metadata:
+          labels:
+            app: uptime-monitor-rabbitmq
+        spec:
+          containers:
+          - name: rabbitmq
+            image: rabbitmq:3-management-alpine
+            imagePullPolicy: IfNotPresent
+            env:
+            - name: RABBITMQ_DEFAULT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-secret
+                  key: username
+            - name: RABBITMQ_DEFAULT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-secret
+                  key: password
+            ports:
+            - name: amqp
+              containerPort: 5672
+            - name: management
+              containerPort: 15672
+            readinessProbe:
+              exec:
+                command:
+                - rabbitmq-diagnostics
+                - ping
+              initialDelaySeconds: 10
+              periodSeconds: 10
+              timeoutSeconds: 5
+            livenessProbe:
+              exec:
+                command:
+                - rabbitmq-diagnostics
+                - ping
+              initialDelaySeconds: 30
+              periodSeconds: 30
+              timeoutSeconds: 5
