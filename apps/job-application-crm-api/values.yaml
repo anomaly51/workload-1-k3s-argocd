@@ -9,7 +9,7 @@ app:
   images:
     api:
       repository: harbor.api-api-api.com/job-application-crm/api
-      tag: sha-37cdd17ffea1
+      tag: sha-a16a1cd47e74
   externalSecrets:
   - name: job-application-crm-api-secret
     data:
