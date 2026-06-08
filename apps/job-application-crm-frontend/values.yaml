@@ -8,7 +8,7 @@ app:
       argocd.argoproj.io/sync-options: Delete=false,Prune=false
   image:
     repository: harbor.api-api-api.com/job-application-crm/frontend
-    tag: sha-b14f5e97825c
+    tag: sha-483365a0b521
   registryPullSecret:
     enabled: true
   selectorLabels:
