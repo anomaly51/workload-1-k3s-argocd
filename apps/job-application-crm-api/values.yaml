@@ -96,6 +96,8 @@ app:
           labels:
             app: job-application-crm-api
         spec:
+          imagePullSecrets:
+          - name: harbor-pull-secret
           initContainers:
           - name: migrate
             image: __IMAGE_api__
