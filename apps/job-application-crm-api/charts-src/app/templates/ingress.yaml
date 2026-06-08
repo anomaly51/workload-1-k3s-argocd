@@ -1,0 +1,44 @@
+{{- if and .Values.ingress.enabled .Values.image.repository }}
+{{- $annotations := dict }}
+{{- with .Values.cluster.certManager.issuer }}
+{{- $_ := set $annotations "cert-manager.io/cluster-issuer" . }}
+{{- end }}
+{{- with .Values.ingress.host }}
+{{- $_ := set $annotations "external-dns.alpha.kubernetes.io/hostname" . }}
+{{- end }}
+{{- with .Values.cluster.externalDns.target }}
+{{- $_ := set $annotations "external-dns.alpha.kubernetes.io/target" . }}
+{{- end }}
+{{- $annotations = mergeOverwrite $annotations .Values.ingress.annotations }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "app.fullname" . }}
+  namespace: {{ include "app.namespace" . }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+  {{- with $annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  tls:
+    - hosts:
+        - {{ .Values.ingress.host }}
+      secretName: {{ default (default (printf "%s-tls" (include "app.fullname" .)) .Values.ingress.tlsSecretName) .Values.ingress.tls.secretName }}
+  rules:
+    - host: {{ .Values.ingress.host }}
+      http:
+        paths:
+          {{- $paths := .Values.ingress.paths | default (list (dict "path" .Values.ingress.path "pathType" .Values.ingress.pathType)) }}
+          {{- range $paths }}
+          - path: {{ .path }}
+            pathType: {{ default $.Values.ingress.pathType .pathType }}
+            backend:
+              service:
+                name: {{ include "app.fullname" $ }}
+                port:
+                  number: {{ $.Values.service.port }}
+          {{- end }}
+{{- end }}
