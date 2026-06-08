@@ -9,7 +9,7 @@ app:
   images:
     api:
       repository: harbor.api-api-api.com/uptime-monitor/api
-      tag: sha-1a4a085f8fe0
+      tag: sha-808f3ea09ead
   externalSecrets:
   - name: uptime-monitor-backend-secret
     data:
