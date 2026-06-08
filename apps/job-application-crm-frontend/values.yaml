@@ -1,0 +1,38 @@
+app:
+  name: job-application-crm-frontend
+  resourceName: job-application-crm-frontend
+  namespace:
+    create: true
+    name: job-application-crm-frontend
+    annotations:
+      argocd.argoproj.io/sync-options: Delete=false,Prune=false
+  image:
+    repository: harbor.api-api-api.com/job-application-crm/frontend
+    tag: sha-94d485de686a
+  registryPullSecret:
+    enabled: true
+  selectorLabels:
+    app: job-application-crm-frontend
+  ports:
+  - name: http
+    containerPort: 80
+  service:
+    enabled: true
+    port: 80
+    targetPort: 80
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: 80
+    initialDelaySeconds: 5
+    periodSeconds: 10
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 80
+    initialDelaySeconds: 10
+    periodSeconds: 20
+  ingress:
+    enabled: true
+    host: job-application-crm.api-api-api.com
+    tlsSecretName: job-application-crm-frontend-tls

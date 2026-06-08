@@ -1,0 +1,171 @@
+app:
+  namespace:
+    create: true
+    name: job-application-crm-api
+    annotations:
+      argocd.argoproj.io/sync-options: Delete=false,Prune=false
+  registryPullSecret:
+    enabled: true
+  images:
+    api:
+      repository: harbor.api-api-api.com/job-application-crm/api
+      tag: sha-94d485de686a
+  externalSecrets:
+  - name: job-application-crm-api-secret
+    data:
+    - secretKey: JWT_SECRET
+      remoteRef:
+        key: workload-1/job-application-crm-api
+        property: jwt_secret
+  - name: job-application-crm-postgres-secret
+    targetName: postgres-secret
+    data:
+    - secretKey: password
+      remoteRef:
+        key: workload-1/job-application-crm-postgres
+        property: password
+  addons:
+    postgres:
+      enabled: true
+      selectorLabels:
+        app: job-application-crm-postgres
+      database: job_application_crm
+      user: jobcrm
+      image:
+        repository: postgres
+        tag: 16-alpine
+      passwordSecret:
+        name: postgres-secret
+        key: password
+      persistence:
+        size: 5Gi
+  objects:
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: job-application-crm-api
+      namespace: job-application-crm-api
+      labels:
+        app: job-application-crm-api
+    spec:
+      type: ClusterIP
+      selector:
+        app: job-application-crm-api
+      ports:
+      - name: http
+        port: 80
+        targetPort: 8000
+  - apiVersion: networking.k8s.io/v1
+    kind: Ingress
+    metadata:
+      name: job-application-crm-api
+      namespace: job-application-crm-api
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt-production
+    spec:
+      ingressClassName: traefik
+      tls:
+      - hosts:
+        - job-application-crm-api.api-api-api.com
+        secretName: job-application-crm-api-tls
+      rules:
+      - host: job-application-crm-api.api-api-api.com
+        http:
+          paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: job-application-crm-api
+                port:
+                  number: 80
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: job-application-crm-api
+      namespace: job-application-crm-api
+      labels:
+        app: job-application-crm-api
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app: job-application-crm-api
+      template:
+        metadata:
+          labels:
+            app: job-application-crm-api
+        spec:
+          initContainers:
+          - name: migrate
+            image: __IMAGE_api__
+            imagePullPolicy: IfNotPresent
+            command:
+            - sh
+            - -c
+            - |
+              until python - <<'PY'
+              import socket
+              s = socket.create_connection(("postgres", 5432), 2)
+              s.close()
+              PY
+              do
+                sleep 2
+              done
+              alembic upgrade head
+            env: &job-application-crm-api-env
+            - name: PROJECT_NAME
+              value: Job Application CRM
+            - name: DEBUG
+              value: "false"
+            - name: JWT_ISSUER
+              value: job-application-crm-api
+            - name: JWT_AUDIENCE
+              value: job-application-crm-client
+            - name: ACCESS_TOKEN_EXPIRE_MINUTES
+              value: "1440"
+            - name: REFRESH_TOKEN_EXPIRE_DAYS
+              value: "14"
+            - name: BACKEND_CORS_ORIGINS
+              value: '["https://job-application-crm.api-api-api.com"]'
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: password
+            - name: DATABASE_URL
+              value: postgresql+asyncpg://jobcrm:$(POSTGRES_PASSWORD)@postgres:5432/job_application_crm
+            envFrom:
+            - secretRef:
+                name: job-application-crm-api-secret
+          containers:
+          - name: api
+            image: __IMAGE_api__
+            imagePullPolicy: IfNotPresent
+            env: *job-application-crm-api-env
+            envFrom:
+            - secretRef:
+                name: job-application-crm-api-secret
+            ports:
+            - name: http
+              containerPort: 8000
+            readinessProbe:
+              httpGet:
+                path: /healthcheck
+                port: 8000
+              initialDelaySeconds: 10
+              periodSeconds: 10
+              timeoutSeconds: 3
+            livenessProbe:
+              httpGet:
+                path: /healthcheck
+                port: 8000
+              initialDelaySeconds: 20
+              periodSeconds: 20
+              timeoutSeconds: 3
+            resources:
+              requests:
+                cpu: 100m
+                memory: 128Mi
+              limits:
+                memory: 512Mi
