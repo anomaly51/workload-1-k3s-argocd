@@ -8,7 +8,7 @@ app:
       argocd.argoproj.io/sync-options: Delete=false,Prune=false
   image:
     repository: harbor.api-api-api.com/uptime-monitor/frontend
-    tag: sha-808f3ea09ead
+    tag: sha-a11bf2662b3c
   registryPullSecret:
     enabled: true
   selectorLabels:
