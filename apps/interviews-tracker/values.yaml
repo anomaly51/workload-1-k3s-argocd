@@ -76,6 +76,13 @@ app:
       - host: interviews-tracker.api-api-api.com
         http:
           paths:
+          - path: /auth
+            pathType: Prefix
+            backend:
+              service:
+                name: interviews-tracker-api
+                port:
+                  number: 80
           - path: /applications
             pathType: Prefix
             backend:
