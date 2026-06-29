@@ -290,6 +290,58 @@ argocd-image-updater:
     - apiVersion: argocd-image-updater.argoproj.io/v1alpha1
       kind: ImageUpdater
       metadata:
+        name: interviews-tracker-frontend
+        namespace: argocd
+      spec:
+        writeBackConfig:
+          method: git:secret:argocd/argocd-image-updater-git-creds
+          gitConfig:
+            repository: https://github.com/anomaly51/workload-1-k3s-argocd.git
+            branch: main
+            writeBackTarget: helmvalues:./values.yaml
+        applicationRefs:
+          - namePattern: interviews-tracker
+            images:
+              - alias: frontend
+                imageName: harbor.api-api-api.com/job-application-crm/interviews-tracker-frontend
+                commonUpdateSettings:
+                  updateStrategy: newest-build
+                  allowTags: regexp:^sha-[0-9a-f]{12}$
+                  platforms:
+                    - linux/amd64
+                manifestTargets:
+                  helm:
+                    name: app.images.frontend.repository
+                    tag: app.images.frontend.tag
+    - apiVersion: argocd-image-updater.argoproj.io/v1alpha1
+      kind: ImageUpdater
+      metadata:
+        name: interviews-tracker-api
+        namespace: argocd
+      spec:
+        writeBackConfig:
+          method: git:secret:argocd/argocd-image-updater-git-creds
+          gitConfig:
+            repository: https://github.com/anomaly51/workload-1-k3s-argocd.git
+            branch: main
+            writeBackTarget: helmvalues:./values.yaml
+        applicationRefs:
+          - namePattern: interviews-tracker
+            images:
+              - alias: api
+                imageName: harbor.api-api-api.com/job-application-crm/interviews-tracker-api
+                commonUpdateSettings:
+                  updateStrategy: newest-build
+                  allowTags: regexp:^sha-[0-9a-f]{12}$
+                  platforms:
+                    - linux/amd64
+                manifestTargets:
+                  helm:
+                    name: app.images.api.repository
+                    tag: app.images.api.tag
+    - apiVersion: argocd-image-updater.argoproj.io/v1alpha1
+      kind: ImageUpdater
+      metadata:
         name: online-shop-frontend
         namespace: argocd
       spec:

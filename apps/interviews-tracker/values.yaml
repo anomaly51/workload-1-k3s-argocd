@@ -9,10 +9,10 @@ app:
   images:
     frontend:
       repository: harbor.api-api-api.com/job-application-crm/interviews-tracker-frontend
-      tag: manual-20260629210829
+      tag: sha-62f5706e20d5
     api:
       repository: harbor.api-api-api.com/job-application-crm/interviews-tracker-api
-      tag: manual-20260629212453
+      tag: sha-62f5706e20d5
   objects:
   - apiVersion: v1
     kind: Service
