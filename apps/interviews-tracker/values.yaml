@@ -9,10 +9,10 @@ app:
   images:
     frontend:
       repository: harbor.api-api-api.com/job-application-crm/interviews-tracker-frontend
-      tag: sha-62f5706e20d5
+      tag: sha-9f03fb5978a3
     api:
       repository: harbor.api-api-api.com/job-application-crm/interviews-tracker-api
-      tag: sha-62f5706e20d5
+      tag: sha-9f03fb5978a3
   objects:
   - apiVersion: v1
     kind: Service
@@ -217,7 +217,7 @@ app:
             - name: APP_CORS_ORIGINS
               value: https://interviews-tracker.api-api-api.com
             - name: APP_SEED_SAMPLE_DATA
-              value: "true"
+              value: "false"
             ports:
             - name: http
               containerPort: 8000
