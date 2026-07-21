@@ -7,7 +7,7 @@ app:
   images:
     backend:
       repository: harbor.api-api-api.com/online-shop/backend
-      tag: sha-e7f365192513
+      tag: sha-c99a40d02058
     minio:
       repository: minio/minio
       tag: latest
