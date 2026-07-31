@@ -167,5 +167,7 @@ app:
       pathType: Prefix
     - path: /api
       pathType: Prefix
+    - path: /casino
+      pathType: Prefix
     - path: /health
       pathType: Exact
