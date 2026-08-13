@@ -42,7 +42,7 @@ app:
       cpu: 100m
       memory: 256Mi
   persistence:
-    enabled: true
+    enabled: false
     name: session-data
     claimName: bot-session-data
     mountPath: /app/session
@@ -71,6 +71,8 @@ app:
     - name: session-data
       mountPath: /session
   extraVolumeMounts:
+  - name: session-data
+    mountPath: /app/session
   - name: logs
     mountPath: /app/logs
   - name: downloads
@@ -78,6 +80,8 @@ app:
   - name: content
     mountPath: /app/content
   extraVolumes:
+  - name: session-data
+    emptyDir: {}
   - name: bot-session
     secret:
       secretName: bot-session
