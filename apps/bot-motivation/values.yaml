@@ -1,4 +1,5 @@
 app:
+  replicaCount: 0
   name: bot-motivation
   resourceName: bot-motivation
   labels:
