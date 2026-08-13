@@ -1,4 +1,5 @@
 app:
+  replicaCount: 0
   name: downloader-sloniara-bot
   resourceName: bot
   namespace:
