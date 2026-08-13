@@ -92,6 +92,22 @@ app:
     emptyDir: {}
   - name: content
     emptyDir: {}
+  objects:
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: bot-session-data
+      namespace: downloader-sloniara-bot
+      annotations:
+        argocd.argoproj.io/sync-options: Delete=false,Prune=false
+        helm.sh/resource-policy: keep
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      storageClassName: nfs-client
+      resources:
+        requests:
+          storage: 1Gi
   externalSecrets:
   - name: bot-env
     refreshInterval: 5m
