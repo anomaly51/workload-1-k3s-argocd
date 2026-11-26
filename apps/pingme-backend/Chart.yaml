@@ -1,6 +1,7 @@
 ---
 apiVersion: v2
-name: find-offer-fast-backend
+# Retired identity stays stable until database retention is reviewed in PR #1.
+name: pingme-backend
 description: Find Offer Fast group learning and progress tracking backend
 version: 0.1.0
 type: application
